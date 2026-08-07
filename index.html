@@ -669,6 +669,10 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="syncAllToGoogleSheets()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="Googleスプレッドシートへ全員分を送信">
+                            <i class="fa-brands fa-google-drive"></i>
+                            <span>Sheetsへ送信</span>
+                        </button>
                         <button onclick="exportJSON()" class="text-xs bg-cyan-700 hover:bg-cyan-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="回答・業務設定を丸ごとファイル保存（あとから読込可能）">
                             <i class="fa-solid fa-floppy-disk"></i>
                             <span>JSON保存</span>
@@ -871,8 +875,8 @@
                         <i class="fa-solid fa-sliders"></i>
                     </div>
                     <div>
-                        <h2 class="text-base font-extrabold text-white">業務項目設定</h2>
-                        <p class="text-xs text-slate-400">全50個の業務項目名と内容をカスタマイズできます</p>
+                        <h2 class="text-base font-extrabold text-white">設定</h2>
+                        <p class="text-xs text-slate-400">スプレッドシート連携・業務項目のカスタマイズ</p>
                     </div>
                 </div>
                 <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
@@ -880,6 +884,48 @@
                 </button>
             </div>
 
+            <!-- Google Sheets sync settings -->
+            <div class="shrink-0 mb-4 p-4 rounded-xl bg-slate-950/80 border border-emerald-800/60 space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-emerald-300 flex items-center space-x-2">
+                            <i class="fa-brands fa-google-drive"></i>
+                            <span>Googleスプレッドシート連携</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            Apps Script のウェブアプリURL（末尾 /exec）を保存すると、回答をDrive上のシートへ送れます。
+                        </p>
+                    </div>
+                    <a href="https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit" target="_blank" rel="noopener" class="shrink-0 text-[11px] font-bold text-cyan-300 hover:text-white border border-slate-700 px-2.5 py-1.5 rounded-lg">
+                        シートを開く
+                    </a>
+                </div>
+                <input type="url" id="input-sheets-webapp-url" placeholder="https://script.google.com/macros/s/xxxxx/exec" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-cyan-200 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="saveGoogleSheetsUrl()" class="text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl transition">
+                        URLを保存
+                    </button>
+                    <button onclick="syncAllToGoogleSheets()" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl transition">
+                        全員分をSheetsへ送信
+                    </button>
+                    <button onclick="testGoogleSheetsConnection()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3 py-2 rounded-xl transition">
+                        接続テスト
+                    </button>
+                </div>
+                <p id="sheets-sync-status" class="text-[11px] text-slate-500">未設定</p>
+                <details class="text-[11px] text-slate-400">
+                    <summary class="cursor-pointer text-slate-300 font-bold">初回セットアップ手順（約5分）</summary>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 leading-relaxed">
+                        <li>上の「シートを開く」→「拡張機能」→「Apps Script」</li>
+                        <li>リポジトリの <code class="text-cyan-300">google-apps-script/Code.gs</code> を全文貼り付けて保存</li>
+                        <li>「デプロイ」→「新しいデプロイ」→種類「ウェブアプリ」</li>
+                        <li>実行: 自分　／　アクセス: 全員（または組織内）→ デプロイ</li>
+                        <li>表示されたURLを上欄に貼って「URLを保存」</li>
+                    </ol>
+                </details>
+            </div>
+
+            <p class="text-xs font-bold text-slate-400 mb-2 shrink-0">業務項目（50）</p>
             <div id="admin-tasks-editor" class="space-y-2.5 overflow-y-auto custom-scrollbar pr-1 flex-grow">
                 <!-- Task rows dynamically rendered -->
             </div>
@@ -914,6 +960,18 @@
         let currentSortMode = "dislike"; // 'dislike', 'dislike_ratio', 'like'
         let currentSurveyMode = "deck"; // 'deck' or 'list'
         let currentDeckIndex = 0; // 0 to 49
+        let googleSheetsWebAppUrl = ""; // Apps Script Web App URL (.../exec)
+        const DEFAULT_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit";
+        const SHEETS_URL_STORAGE_KEY = "school_office_time_thief_sheets_url_v1";
+
+        const CHOICE_LABEL_JA = {
+            love: "大好き",
+            like: "好き",
+            neutral: "普通",
+            dislike: "嫌い",
+            hate: "大嫌い",
+            unassigned: "担当外"
+        };
 
         /* SVG AVATAR GENERATOR (HIGH QUALITY CHARACTER ART) */
         function getCharacterSVG(charId) {
@@ -1204,6 +1262,50 @@
             }
         }
 
+        function loadGoogleSheetsUrl() {
+            try {
+                googleSheetsWebAppUrl = localStorage.getItem(SHEETS_URL_STORAGE_KEY) || "";
+            } catch (e) {
+                googleSheetsWebAppUrl = "";
+            }
+            updateSheetsSyncStatus();
+        }
+
+        function saveGoogleSheetsUrl() {
+            const input = document.getElementById('input-sheets-webapp-url');
+            const url = (input?.value || "").trim();
+            if (url && !url.includes('/exec')) {
+                alert("ウェブアプリURLの末尾は通常 /exec です。デプロイ画面のURLをそのまま貼ってください。");
+                return;
+            }
+            googleSheetsWebAppUrl = url;
+            try {
+                if (url) localStorage.setItem(SHEETS_URL_STORAGE_KEY, url);
+                else localStorage.removeItem(SHEETS_URL_STORAGE_KEY);
+            } catch (e) {
+                console.error(e);
+            }
+            updateSheetsSyncStatus();
+            alert(url ? "スプレッドシート連携URLを保存しました。" : "URLをクリアしました。");
+        }
+
+        function updateSheetsSyncStatus(extraMessage) {
+            const el = document.getElementById('sheets-sync-status');
+            if (!el) return;
+            if (extraMessage) {
+                el.textContent = extraMessage;
+                el.className = "text-[11px] text-cyan-300";
+                return;
+            }
+            if (googleSheetsWebAppUrl) {
+                el.textContent = "連携中: URL設定済み → 完了時の自動送信 / 「Sheetsへ送信」が使えます";
+                el.className = "text-[11px] text-emerald-400";
+            } else {
+                el.textContent = "未設定（初回は下の手順で Apps Script をデプロイし、URLを保存してください）";
+                el.className = "text-[11px] text-slate-500";
+            }
+        }
+
         function loadDataFromStorage() {
             try {
                 const raw = localStorage.getItem('school_office_time_thief_data_v1');
@@ -1222,6 +1324,7 @@
             if (!userResponses[currentNickname]) {
                 userResponses[currentNickname] = {};
             }
+            loadGoogleSheetsUrl();
         }
 
         /* NICKNAME & WELCOME MODAL LOGIC */
@@ -1414,6 +1517,9 @@
 
             const thanksModal = document.getElementById('modal-thanks');
             thanksModal.classList.remove('hidden');
+
+            // 完了時にSheetsへ自動送信（URL設定済みの場合）
+            syncUserToGoogleSheets(currentNickname, { silent: true });
 
             // 2.2秒間「お疲れ様でした！」を表示した後、診断結果モーダルを開く
             setTimeout(() => {
@@ -1777,6 +1883,7 @@
             if (count >= 50) {
                 playSound('fanfare');
                 triggerGrandFinaleConfetti();
+                syncUserToGoogleSheets(currentNickname, { silent: true });
                 showDiagnosisModalForCurrent();
             }
         }
@@ -2001,17 +2108,24 @@
             const container = document.getElementById('admin-tasks-editor');
             container.innerHTML = '';
 
+            const urlInput = document.getElementById('input-sheets-webapp-url');
+            if (urlInput) urlInput.value = googleSheetsWebAppUrl || "";
+            updateSheetsSyncStatus();
+
             TASKS.forEach((task, index) => {
                 const row = document.createElement('div');
                 row.className = "bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-1.5";
 
+                const safeName = String(task.name).replace(/"/g, '&quot;');
+                const safeDesc = String(task.desc).replace(/"/g, '&quot;');
+
                 row.innerHTML = `
                     <div class="flex items-center space-x-2">
                         <span class="w-8 text-center text-xs font-bold text-cyan-400 font-game">No.${task.id}</span>
-                        <input type="text" id="admin-task-name-${index}" value="${task.name}" class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-cyan-400 focus:outline-none">
+                        <input type="text" id="admin-task-name-${index}" value="${safeName}" class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-cyan-400 focus:outline-none">
                     </div>
                     <div class="pl-10">
-                        <input type="text" id="admin-task-desc-${index}" value="${task.desc}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 focus:ring-1 focus:ring-cyan-400 focus:outline-none">
+                        <input type="text" id="admin-task-desc-${index}" value="${safeDesc}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 focus:ring-1 focus:ring-cyan-400 focus:outline-none">
                     </div>
                 `;
 
@@ -2092,6 +2206,118 @@
                 updateProgress();
                 renderMatrix();
                 alert("8人分のサンプルデータを生成しました。");
+            }
+        }
+
+        /* GOOGLE SHEETS SYNC (via Apps Script Web App) */
+        function getGoogleSheetsUrlOrWarn(options = {}) {
+            const url = (googleSheetsWebAppUrl || "").trim();
+            if (!url) {
+                if (!options.silent) {
+                    alert("先に歯車設定で Apps Script のウェブアプリURLを保存してください。\n手順は設定画面内にあります。\n\nシート: " + DEFAULT_SPREADSHEET_URL);
+                    openAdminModal();
+                }
+                return "";
+            }
+            return url;
+        }
+
+        function buildDiagnosesMap() {
+            const diagnoses = {};
+            Object.keys(userResponses).forEach((user) => {
+                const char = calculatePersonalityType(user);
+                if (char) {
+                    diagnoses[user] = { id: char.id, name: char.name, tagline: char.tagline };
+                }
+            });
+            return diagnoses;
+        }
+
+        async function postToGoogleSheets(payload, options = {}) {
+            const url = getGoogleSheetsUrlOrWarn(options);
+            if (!url) return { ok: false, skipped: true };
+
+            // GitHub Pages → Apps Script は CORS 制約があるため text/plain + no-cors で送信
+            // （レスポンスは読めないが、シートへの書き込みは行われる）
+            try {
+                updateSheetsSyncStatus("送信中...");
+                await fetch(url, {
+                    method: "POST",
+                    mode: "no-cors",
+                    cache: "no-cache",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                updateSheetsSyncStatus("送信リクエスト完了（シートを開いて反映を確認してください）");
+                if (!options.silent) {
+                    alert("スプレッドシートへ送信しました。\n数秒後にシートを更新して確認してください。\n\n" + DEFAULT_SPREADSHEET_URL);
+                }
+                return { ok: true };
+            } catch (e) {
+                console.error(e);
+                updateSheetsSyncStatus("送信に失敗しました");
+                if (!options.silent) {
+                    alert("送信に失敗しました。URLとApps Scriptのデプロイ設定を確認してください。\n" + (e.message || e));
+                }
+                return { ok: false, error: e };
+            }
+        }
+
+        async function syncAllToGoogleSheets(options = {}) {
+            if (Object.keys(userResponses).length === 0) {
+                if (!options.silent) alert("送信する回答データがありません。");
+                return;
+            }
+            const payload = {
+                action: "sync_all",
+                exportedAt: new Date().toISOString(),
+                tasks: TASKS,
+                responses: userResponses,
+                diagnoses: buildDiagnosesMap()
+            };
+            return postToGoogleSheets(payload, options);
+        }
+
+        async function syncUserToGoogleSheets(nickname, options = {}) {
+            const user = nickname || currentNickname;
+            const answers = userResponses[user];
+            if (!answers || Object.keys(answers).length === 0) {
+                if (!options.silent) alert("この回答者のデータがありません。");
+                return;
+            }
+            if (!getGoogleSheetsUrlOrWarn({ silent: true }) && options.silent) {
+                return; // 自動送信時はURL未設定なら黙ってスキップ
+            }
+            const char = calculatePersonalityType(user);
+            const payload = {
+                action: "sync_user",
+                exportedAt: new Date().toISOString(),
+                nickname: user,
+                answers: answers,
+                tasks: TASKS,
+                diagnosis: char ? { id: char.id, name: char.name, tagline: char.tagline } : {}
+            };
+            return postToGoogleSheets(payload, options);
+        }
+
+        async function testGoogleSheetsConnection() {
+            const url = getGoogleSheetsUrlOrWarn();
+            if (!url) return;
+            try {
+                updateSheetsSyncStatus("接続テスト中...");
+                // GET は CORS で読めない場合があるため、空の動作確認POSTを送る
+                await postToGoogleSheets({
+                    action: "sync_all",
+                    exportedAt: new Date().toISOString(),
+                    note: "接続テスト",
+                    tasks: TASKS,
+                    responses: {},
+                    diagnoses: {}
+                }, { silent: true });
+                alert("接続テストのリクエストを送りました。\nスプレッドシートに「メタ」シートができていればOKです。\n\n" + DEFAULT_SPREADSHEET_URL);
+                window.open(DEFAULT_SPREADSHEET_URL, "_blank", "noopener");
+            } catch (e) {
+                alert("接続テストに失敗しました: " + (e.message || e));
             }
         }
 
