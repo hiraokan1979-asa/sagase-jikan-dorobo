@@ -117,15 +117,15 @@
             }
         }
 
-        /* Toast Speech Bubble Animation */
+        /* Toast Speech Bubble Animation (約3秒表示して消える) */
         @keyframes toastBubble {
             0% { opacity: 0; transform: translateY(-12px) scale(0.9); }
-            15% { opacity: 1; transform: translateY(0) scale(1.05); }
+            8% { opacity: 1; transform: translateY(0) scale(1.05); }
             85% { opacity: 1; transform: translateY(0) scale(1); }
             100% { opacity: 0; transform: translateY(-10px) scale(0.95); }
         }
         .toast-anim {
-            animation: toastBubble 1.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: toastBubble 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         /* Big Countdown Zoom */
@@ -1530,6 +1530,7 @@
         }
 
         /* TOAST CHEER MESSAGE */
+        let cheerHideTimer = null;
         function showCheerMessage(choice) {
             const bubble = document.getElementById('cheer-bubble');
             const textEl = document.getElementById('cheer-message-text');
@@ -1553,13 +1554,19 @@
 
             textEl.textContent = msg;
 
+            if (cheerHideTimer) {
+                clearTimeout(cheerHideTimer);
+                cheerHideTimer = null;
+            }
+
             bubble.classList.remove('hidden', 'toast-anim');
             void bubble.offsetWidth;
             bubble.classList.add('toast-anim');
 
-            setTimeout(() => {
+            cheerHideTimer = setTimeout(() => {
                 bubble.classList.add('hidden');
-            }, 1600);
+                cheerHideTimer = null;
+            }, 3000);
         }
 
         function nextDeckCard() {
