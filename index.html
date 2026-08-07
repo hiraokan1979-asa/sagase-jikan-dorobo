@@ -2035,23 +2035,25 @@
             document.getElementById('view-ranking').classList.add('hidden');
             document.getElementById('view-matrix').classList.add('hidden');
 
-            document.getElementById('nav-survey').className = "px-3 py-1.5 text-xs font-semibold tracking-[0.14em] text-[#8A8580] hover:text-[#121212] transition flex items-center space-x-1.5";
-            document.getElementById('nav-ranking').className = "px-3 py-1.5 text-xs font-semibold tracking-[0.14em] text-[#8A8580] hover:text-[#121212] transition flex items-center space-x-1.5";
-            document.getElementById('nav-matrix').className = "px-3 py-1.5 text-xs font-semibold tracking-[0.14em] text-[#8A8580] hover:text-[#121212] transition flex items-center space-x-1.5";
+            const idleNav = "px-3 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] text-[#8A8580] hover:text-[#121212] transition border-l border-black/10";
+            const activeNav = "px-3 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] bg-[#121212] text-white transition";
+            document.getElementById('nav-survey').className = idleNav;
+            document.getElementById('nav-ranking').className = idleNav;
+            document.getElementById('nav-matrix').className = idleNav;
 
             if (tab === 'survey') {
                 document.getElementById('view-survey').classList.remove('hidden');
-                document.getElementById('nav-survey').className = "px-3 py-1.5 text-xs font-semibold tracking-[0.14em] bg-[#121212] text-white shadow-md  transition flex items-center space-x-1.5";
+                document.getElementById('nav-survey').className = activeNav;
                 renderDeckCard();
             } else if (tab === 'ranking') {
                 document.getElementById('view-ranking').classList.remove('hidden');
-                document.getElementById('nav-ranking').className = "px-3 py-1.5 text-xs font-semibold tracking-[0.14em] bg-[#121212] text-white shadow-md  transition flex items-center space-x-1.5";
+                document.getElementById('nav-ranking').className = activeNav;
                 updateCloudStatusUI('スプレッドシートから読込中...');
                 await loadCloudResponsesFromSheets();
                 renderRankingAndAnalysis();
             } else if (tab === 'matrix') {
                 document.getElementById('view-matrix').classList.remove('hidden');
-                document.getElementById('nav-matrix').className = "px-3 py-1.5 text-xs font-semibold tracking-[0.14em] bg-[#121212] text-white shadow-md  transition flex items-center space-x-1.5";
+                document.getElementById('nav-matrix').className = activeNav;
                 await loadCloudResponsesFromSheets();
                 renderMatrix();
             }
