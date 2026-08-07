@@ -1080,6 +1080,16 @@
             unassigned: "担当外"
         };
 
+        /** 同一人物判定用にニックネームを正規化（Sheets側と同じルール） */
+        function normalizeNickname(name) {
+            let s = String(name == null ? "" : name).trim();
+            if (!s) return "";
+            try {
+                if (typeof s.normalize === "function") s = s.normalize("NFKC");
+            } catch (e) { /* ignore */ }
+            return s.replace(/\s+/g, " ").trim();
+        }
+
         /* SVG AVATAR GENERATOR (HIGH QUALITY CHARACTER ART) */
         function getCharacterSVG(charId) {
             switch(charId) {
@@ -1446,7 +1456,7 @@
         }
 
         function startSurveyWithCountdown() {
-            const inputName = document.getElementById('input-init-nickname').value.trim();
+            const inputName = normalizeNickname(document.getElementById('input-init-nickname').value);
             if (!inputName) {
                 alert("ニックネーム（匿名可）を入力してください");
                 return;
@@ -1623,7 +1633,11 @@
         }
 
         /* SHOW THANKS & CLEAR CELEBRATION SEQUENCE */
+        let thanksSyncInFlight = false;
         async function showThanksAndClearSequence() {
+            if (thanksSyncInFlight) return;
+            thanksSyncInFlight = true;
+
             playSound('fanfare');
             triggerGrandFinaleConfetti();
 
@@ -1634,7 +1648,7 @@
                 syncStatus.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i><span>スプレッドシートへ記録中...</span>';
             }
 
-            // 完了時に必ずSheetsへ自動送信してから診断表示
+            // 完了時に必ずSheetsへ自動送信してから診断表示（同名はサーバ側で上書き）
             const result = await syncUserToGoogleSheets(currentNickname, { silent: true });
             if (syncStatus) {
                 if (result && result.ok) {
@@ -1651,6 +1665,7 @@
             setTimeout(() => {
                 thanksModal.classList.add('hidden');
                 showDiagnosisModalForCurrent();
+                thanksSyncInFlight = false;
             }, 1800);
         }
 
@@ -2683,8 +2698,8 @@
         }
 
         async function syncUserToGoogleSheets(nickname, options = {}) {
-            const user = nickname || currentNickname;
-            const answers = userResponses[user];
+            const user = normalizeNickname(nickname || currentNickname);
+            const answers = userResponses[user] || userResponses[nickname || currentNickname];
             if (!answers || Object.keys(answers).length === 0) {
                 if (!options.silent) alert("この回答者のデータがありません。");
                 return { ok: false };
@@ -2692,7 +2707,7 @@
             if (!getGoogleSheetsUrlOrWarn({ silent: true })) {
                 return { ok: false, skipped: true };
             }
-            const char = calculatePersonalityType(user);
+            const char = calculatePersonalityType(user) || calculatePersonalityType(nickname || currentNickname);
             const normalized = {};
             Object.entries(answers).forEach(([k, v]) => {
                 normalized[String(k)] = v;

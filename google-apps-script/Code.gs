@@ -3,6 +3,8 @@
  *
  * 対象スプレッドシート:
  * https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit
+ *
+ * 同一ニックネームは1行に上書き（重複行は削除）
  */
 
 var SPREADSHEET_ID = '1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E';
@@ -31,6 +33,10 @@ function doGet(e) {
     if (action === 'export' || action === 'all') {
       return json_(exportAll_());
     }
+    if (action === 'dedupe') {
+      var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      return json_(dedupeAllSheets_(ss));
+    }
     return json_({
       ok: true,
       app: 'さがせ！時間泥棒',
@@ -53,6 +59,8 @@ function doPost(e) {
 
     if (action === 'sync_user' || action === 'upsert_user') {
       upsertUser_(ss, data);
+    } else if (action === 'dedupe') {
+      return json_(dedupeAllSheets_(ss));
     } else if (action === 'export') {
       return json_(exportAll_());
     } else {
@@ -67,6 +75,10 @@ function doPost(e) {
 
 function exportAll_() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  // 読み取り前に重複があれば整理（分析側が二重カウントしないように）
+  dedupeNicknameSheet_(ss, '回答データ', 2);
+  dedupeNicknameSheet_(ss, 'マトリクス', 2);
+
   var fromRaw = readRawResponses_(ss);
   var responses = fromRaw.responses;
   var source = '回答データ';
@@ -89,15 +101,25 @@ function exportAll_() {
 function syncAll_(ss, data) {
   var tasks = normalizeTasks_(data.tasks);
   var responses = data.responses || {};
-  writeRawSheet_(ss, responses, data.diagnoses || {});
-  writeMatrixSheet_(ss, tasks, responses, data.diagnoses || {});
-  writeAnswersSheet_(ss, tasks, responses);
+  // キー正規化して同一ニックネームをマージ
+  var normalized = {};
+  var diagnoses = data.diagnoses || {};
+  var diagNorm = {};
+  Object.keys(responses).forEach(function (user) {
+    var key = normalizeNickname_(user);
+    if (!key) return;
+    normalized[key] = normalizeAnswers_(responses[user] || {});
+    if (diagnoses[user]) diagNorm[key] = diagnoses[user];
+  });
+  writeRawSheet_(ss, normalized, diagNorm);
+  writeMatrixSheet_(ss, tasks, normalized, diagNorm);
+  writeAnswersSheet_(ss, tasks, normalized);
   writeMetaSheet_(ss, data);
 }
 
 function upsertUser_(ss, data) {
   var tasks = normalizeTasks_(data.tasks);
-  var nickname = String(data.nickname || '').trim();
+  var nickname = normalizeNickname_(data.nickname);
   if (!nickname) throw new Error('nickname が空です');
 
   var answers = normalizeAnswers_(data.answers || {});
@@ -105,11 +127,22 @@ function upsertUser_(ss, data) {
 
   upsertRawRow_(ss, nickname, answers, diagnosis);
   upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis);
-  appendAnswersForUser_(ss, tasks, nickname, answers);
+  replaceAnswersForUser_(ss, tasks, nickname, answers);
   writeMetaSheet_(ss, {
     exportedAt: data.exportedAt || new Date().toISOString(),
-    note: '完了送信: ' + nickname
+    note: '完了送信（上書き）: ' + nickname
   });
+}
+
+/** ニックネーム正規化（前後空白除去・全角半角寄せ・連続空白つぶし） */
+function normalizeNickname_(name) {
+  var s = String(name == null ? '' : name).trim();
+  if (!s) return '';
+  try {
+    if (typeof s.normalize === 'function') s = s.normalize('NFKC');
+  } catch (e) { /* ignore */ }
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
 }
 
 /** 機械可読な正本シート（分析用にアプリが読み戻す） */
@@ -124,10 +157,12 @@ function writeRawSheet_(ss, responses, diagnoses) {
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
   var rows = [];
   Object.keys(responses || {}).forEach(function (user) {
-    var diag = diagnoses[user] || {};
+    var key = normalizeNickname_(user);
+    if (!key) return;
+    var diag = diagnoses[key] || diagnoses[user] || {};
     rows.push([
       now,
-      user,
+      key,
       JSON.stringify(normalizeAnswers_(responses[user] || {})),
       diag.name || '',
       diag.tagline || ''
@@ -156,15 +191,14 @@ function upsertRawRow_(ss, nickname, answers, diagnosis) {
     (diagnosis && diagnosis.tagline) || ''
   ];
 
-  var lastRow = sheet.getLastRow();
-  if (lastRow >= 2) {
-    var names = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
-    for (var i = 0; i < names.length; i++) {
-      if (String(names[i][0]) === nickname) {
-        sheet.getRange(i + 2, 1, 1, 5).setValues([row]);
-        return;
-      }
+  var matchRows = findNicknameRows_(sheet, 2, nickname); // 1-based sheet rows
+  if (matchRows.length > 0) {
+    // 先頭を上書き、残りは下から削除
+    sheet.getRange(matchRows[0], 1, 1, 5).setValues([row]);
+    for (var d = matchRows.length - 1; d >= 1; d--) {
+      sheet.deleteRow(matchRows[d]);
     }
+    return;
   }
   sheet.appendRow(row);
 }
@@ -176,11 +210,12 @@ function readRawResponses_(ss) {
 
   var values = sheet.getDataRange().getValues();
   for (var r = 1; r < values.length; r++) {
-    var nickname = String(values[r][1] || '').trim();
+    var nickname = normalizeNickname_(values[r][1]);
     if (!nickname) continue;
     var jsonText = values[r][2];
     try {
       var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText) : (jsonText || {});
+      // 後勝ち（最新行を優先）
       result.responses[nickname] = normalizeAnswers_(parsed);
     } catch (e) {
       result.responses[nickname] = {};
@@ -208,7 +243,7 @@ function readMatrixResponses_(ss) {
   }
 
   for (var r = 1; r < values.length; r++) {
-    var nickname = String(values[r][1] || '').trim();
+    var nickname = normalizeNickname_(values[r][1]);
     if (!nickname) continue;
     var answers = {};
     taskCols.forEach(function (tc) {
@@ -237,9 +272,10 @@ function writeMatrixSheet_(ss, tasks, responses, diagnoses) {
 
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
   var rows = userKeys.map(function (user) {
+    var key = normalizeNickname_(user);
     var answers = responses[user] || {};
-    var diag = diagnoses[user] || {};
-    var row = [now, user, diag.name || '', diag.tagline || ''];
+    var diag = diagnoses[key] || diagnoses[user] || {};
+    var row = [now, key, diag.name || '', diag.tagline || ''];
     tasks.forEach(function (t) {
       var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
       row.push(labelChoice_(val));
@@ -266,15 +302,13 @@ function upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis) {
     row.push(labelChoice_(val));
   });
 
-  var lastRow = sheet.getLastRow();
-  if (lastRow >= 2) {
-    var names = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
-    for (var i = 0; i < names.length; i++) {
-      if (String(names[i][0]) === nickname) {
-        sheet.getRange(i + 2, 1, 1, row.length).setValues([row]);
-        return;
-      }
+  var matchRows = findNicknameRows_(sheet, 2, nickname);
+  if (matchRows.length > 0) {
+    sheet.getRange(matchRows[0], 1, 1, row.length).setValues([row]);
+    for (var d = matchRows.length - 1; d >= 1; d--) {
+      sheet.deleteRow(matchRows[d]);
     }
+    return;
   }
   sheet.appendRow(row);
 }
@@ -317,11 +351,13 @@ function writeAnswersSheet_(ss, tasks, responses) {
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
   var rows = [];
   Object.keys(responses || {}).forEach(function (user) {
+    var key = normalizeNickname_(user);
+    if (!key) return;
     var answers = responses[user] || {};
     tasks.forEach(function (t) {
       var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
       if (!val) return;
-      rows.push([now, user, t.id, t.name, val, labelChoice_(val)]);
+      rows.push([now, key, t.id, t.name, val, labelChoice_(val)]);
     });
   });
 
@@ -330,13 +366,20 @@ function writeAnswersSheet_(ss, tasks, responses) {
   }
 }
 
-function appendAnswersForUser_(ss, tasks, nickname, answers) {
+/** 同一ニックネームの旧ログを消してから最新回答だけを書く */
+function replaceAnswersForUser_(ss, tasks, nickname, answers) {
   var sheet = getOrCreateSheet_(ss, '回答ログ');
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, 6).setValues([[
       '記録日時', '回答者', '業務No', '業務名', '回答コード', '回答ラベル'
     ]]);
     sheet.setFrozenRows(1);
+  }
+
+  // 既存の同名行を下から削除
+  var matchRows = findNicknameRows_(sheet, 2, nickname);
+  for (var d = matchRows.length - 1; d >= 0; d--) {
+    sheet.deleteRow(matchRows[d]);
   }
 
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
@@ -349,6 +392,118 @@ function appendAnswersForUser_(ss, tasks, nickname, answers) {
   if (rows.length > 0) {
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
   }
+}
+
+/**
+ * 指定シートで回答者列が nickname と一致する行番号（1-based）を返す
+ * @param {Sheet} sheet
+ * @param {number} nicknameCol 1-based column index
+ * @param {string} nickname 正規化済み
+ */
+function findNicknameRows_(sheet, nicknameCol, nickname) {
+  var lastRow = sheet.getLastRow();
+  var matches = [];
+  if (lastRow < 2) return matches;
+
+  var numRows = lastRow - 1;
+  var names = sheet.getRange(2, nicknameCol, numRows, 1).getValues();
+  for (var i = 0; i < names.length; i++) {
+    if (normalizeNickname_(names[i][0]) === nickname) {
+      matches.push(i + 2);
+    }
+  }
+  return matches;
+}
+
+/** 同一ニックネームが複数行ある場合、最終行だけ残して削除 */
+function dedupeNicknameSheet_(ss, sheetName, nicknameCol) {
+  var sheet = ss.getSheetByName(sheetName);
+  var removed = 0;
+  if (!sheet || sheet.getLastRow() < 2) {
+    return { sheet: sheetName, removed: 0 };
+  }
+
+  var lastRow = sheet.getLastRow();
+  var numRows = lastRow - 1;
+  var names = sheet.getRange(2, nicknameCol, numRows, 1).getValues();
+  var seen = {}; // nickname -> last row index (1-based)
+  var toDelete = [];
+
+  for (var i = 0; i < names.length; i++) {
+    var key = normalizeNickname_(names[i][0]);
+    if (!key) continue;
+    var rowNum = i + 2;
+    if (seen[key] != null) {
+      // 以前の行を削除候補に（後勝ち）
+      toDelete.push(seen[key]);
+    }
+    seen[key] = rowNum;
+  }
+
+  toDelete.sort(function (a, b) { return b - a; });
+  for (var d = 0; d < toDelete.length; d++) {
+    sheet.deleteRow(toDelete[d]);
+    removed++;
+  }
+  return { sheet: sheetName, removed: removed };
+}
+
+/** 回答ログはニックネーム×業務No で後勝ち */
+function dedupeAnswersLog_(ss) {
+  var sheet = ss.getSheetByName('回答ログ');
+  var removed = 0;
+  if (!sheet || sheet.getLastRow() < 2) {
+    return { sheet: '回答ログ', removed: 0 };
+  }
+
+  var values = sheet.getDataRange().getValues();
+  var header = values[0];
+  var keep = {}; // key -> row array
+  var order = [];
+
+  for (var r = 1; r < values.length; r++) {
+    var nick = normalizeNickname_(values[r][1]);
+    var taskNo = String(values[r][2] == null ? '' : values[r][2]);
+    if (!nick || !taskNo) continue;
+    var key = nick + '\t' + taskNo;
+    if (!keep[key]) order.push(key);
+    keep[key] = [
+      values[r][0],
+      nick,
+      values[r][2],
+      values[r][3],
+      values[r][4],
+      values[r][5]
+    ];
+  }
+
+  var originalDataRows = values.length - 1;
+  var rows = order.map(function (k) { return keep[k]; });
+  removed = Math.max(0, originalDataRows - rows.length);
+
+  sheet.clear();
+  sheet.getRange(1, 1, 1, header.length).setValues([header]);
+  sheet.setFrozenRows(1);
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+  }
+  return { sheet: '回答ログ', removed: removed };
+}
+
+function dedupeAllSheets_(ss) {
+  var a = dedupeNicknameSheet_(ss, '回答データ', 2);
+  var b = dedupeNicknameSheet_(ss, 'マトリクス', 2);
+  var c = dedupeAnswersLog_(ss);
+  writeMetaSheet_(ss, {
+    exportedAt: new Date().toISOString(),
+    note: '重複整理: 回答データ-' + a.removed + ' / マトリクス-' + b.removed + ' / 回答ログ-' + c.removed
+  });
+  return {
+    ok: true,
+    action: 'dedupe',
+    results: [a, b, c],
+    at: new Date().toISOString()
+  };
 }
 
 function writeMetaSheet_(ss, data) {
