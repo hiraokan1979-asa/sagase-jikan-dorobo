@@ -659,11 +659,11 @@
             <div id="panel-rank" class="space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white">
-                            嫌いが多い順
+                        <button type="button" onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white">
+                            嫌いランキング
                         </button>
-                        <button onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white">
-                            好きが多い順
+                        <button type="button" onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white">
+                            好きランキング
                         </button>
                     </div>
                     <button id="btn-toggle-rank-limit" onclick="toggleRankingLimit()" class="text-xs text-slate-400 hover:text-cyan-300 font-bold px-2 py-1">
@@ -671,7 +671,7 @@
                     </button>
                 </div>
 
-                <p id="rank-helper-text" class="text-xs text-slate-400 px-1">負担の大きい業務 TOP（時間泥棒）</p>
+                <p id="rank-helper-text" class="text-xs text-rose-300/90 px-1 font-bold">いま表示中: 嫌い・大嫌いが多い業務順</p>
 
                 <div id="ranking-list" class="game-panel overflow-hidden divide-y divide-slate-800/80">
                     <!-- rows -->
@@ -2043,21 +2043,25 @@
         }
 
         function setSortMode(mode) {
-            currentSortMode = mode;
+            currentSortMode = (mode === 'like') ? 'like' : 'dislike';
             const dislikeBtn = document.getElementById('sort-dislike');
             const likeBtn = document.getElementById('sort-like');
-            if (mode === 'dislike') {
-                dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white";
-                likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
+            if (currentSortMode === 'dislike') {
+                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white";
+                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
             } else {
-                likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white";
-                dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
+                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white";
+                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
             }
             const helper = document.getElementById('rank-helper-text');
             if (helper) {
-                helper.textContent = mode === 'dislike'
-                    ? "負担の大きい業務 TOP（時間泥棒）"
-                    : "好まれている／得意な業務 TOP";
+                if (currentSortMode === 'dislike') {
+                    helper.className = "text-xs text-rose-300/90 px-1 font-bold";
+                    helper.textContent = "いま表示中: 嫌い・大嫌いが多い業務順";
+                } else {
+                    helper.className = "text-xs text-emerald-300/90 px-1 font-bold";
+                    helper.textContent = "いま表示中: 好き・大好きが多い業務順";
+                }
             }
             renderRanking();
         }
@@ -2222,14 +2226,24 @@
 
             for (let index = 0; index < limit; index++) {
                 const item = sorted[index];
-                const primary = currentSortMode === 'like' ? item.totalLikeCount : item.totalDislikeCount;
+                const isLikeMode = currentSortMode === 'like';
+                const primary = isLikeMode ? item.totalLikeCount : item.totalDislikeCount;
                 const barPct = Math.round((primary / maxVal) * 100);
-                const barColor = currentSortMode === 'like' ? 'bg-emerald-500' : 'bg-rose-500';
+                const barColor = isLikeMode ? 'bg-emerald-500' : 'bg-rose-500';
 
                 let rankClass = "text-slate-500";
-                if (index === 0) rankClass = currentSortMode === 'like' ? "text-emerald-300" : "text-rose-300";
+                if (index === 0) rankClass = isLikeMode ? "text-emerald-300" : "text-rose-300";
                 else if (index === 1) rankClass = "text-slate-300";
                 else if (index === 2) rankClass = "text-amber-600";
+
+                // タブに合わせて主役の数値だけ大きく出し、反対側は控えめに
+                const mainLabel = isLikeMode ? '好き' : '嫌い';
+                const mainDetail = isLikeMode
+                    ? `大好き ${item.loveCount} ＋ 好き ${item.likeCount}`
+                    : `大嫌い ${item.hateCount} ＋ 嫌い ${item.dislikeCount}`;
+                const subLabel = isLikeMode
+                    ? `嫌い ${item.totalDislikeCount}`
+                    : `好き ${item.totalLikeCount}`;
 
                 const row = document.createElement('div');
                 row.className = "px-4 py-3 flex items-center gap-3 hover:bg-slate-900/50 transition";
@@ -2240,15 +2254,12 @@
                         <div class="mt-1.5 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
                             <div class="${barColor} h-full rounded-full transition-all" style="width:${barPct}%"></div>
                         </div>
-                        <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
-                            <span class="text-rose-300 font-bold">嫌い ${item.totalDislikeCount}<span class="text-slate-500 font-medium">（大嫌い${item.hateCount}）</span></span>
-                            <span class="text-emerald-300 font-bold">好き ${item.totalLikeCount}<span class="text-slate-500 font-medium">（大好き${item.loveCount}）</span></span>
-                            <span class="text-slate-500">普通 ${item.neutralCount}</span>
-                        </div>
+                        <div class="mt-1 text-[11px] ${isLikeMode ? 'text-emerald-300/90' : 'text-rose-300/90'} font-bold">${mainDetail}</div>
+                        <div class="text-[10px] text-slate-500">参考: ${subLabel} ／ 普通 ${item.neutralCount}</div>
                     </div>
                     <div class="shrink-0 text-right min-w-[4.5rem]">
-                        <div class="text-[10px] font-bold ${currentSortMode === 'like' ? 'text-emerald-400' : 'text-rose-400'}">${currentSortMode === 'like' ? '好き合計' : '嫌い合計'}</div>
-                        <div class="text-xl font-black ${currentSortMode === 'like' ? 'text-emerald-300' : 'text-rose-300'}">${primary}</div>
+                        <div class="text-[10px] font-bold ${isLikeMode ? 'text-emerald-400' : 'text-rose-400'}">${mainLabel}合計</div>
+                        <div class="text-xl font-black ${isLikeMode ? 'text-emerald-300' : 'text-rose-300'}">${primary}</div>
                     </div>
                 `;
                 rankingList.appendChild(row);
