@@ -267,12 +267,12 @@
                 </div>
 
                 <div class="flex items-center space-x-2 sm:space-x-3">
-                    <div class="hidden xs:flex sm:flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-white/70 border border-[#D4BC94]/40 max-w-[9.5rem] sm:max-w-[12rem]">
+                    <div class="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-white/70 border border-[#D4BC94]/40 max-w-[7.5rem] sm:max-w-[12rem]">
                         <div class="w-7 h-7 rounded-full bg-[#F4F6F9] text-[#B8956C] flex items-center justify-center border border-[#D4BC94]/50 shrink-0">
                             <i class="fa-solid fa-moon text-xs"></i>
                         </div>
                         <div class="min-w-0">
-                            <div class="text-[9px] text-[#8FA3B5] font-bold tracking-wider font-game leading-none">ニックネーム</div>
+                            <div class="text-[9px] text-[#8FA3B5] font-bold tracking-wider font-game leading-none hidden sm:block">ニックネーム</div>
                             <div id="current-nickname-display" class="font-bold text-[#2A3644] text-xs sm:text-sm truncate leading-tight">ゲスト</div>
                         </div>
                     </div>
@@ -1489,6 +1489,8 @@
                 } catch (e) { /* ignore */ }
             }
 
+            repairTasksCatalog();
+
             if (!userResponses[currentNickname]) {
                 userResponses[currentNickname] = {};
             }
@@ -2159,9 +2161,10 @@
                 let loveCount = 0, likeCount = 0, neutralCount = 0, dislikeCount = 0, hateCount = 0, unassignedCount = 0;
                 const lovers = [];
                 const haters = [];
+                const taskId = Number(task.id);
 
                 userKeys.forEach(user => {
-                    const ans = source[user]?.[task.id] ?? source[user]?.[String(task.id)];
+                    const ans = source[user]?.[taskId] ?? source[user]?.[String(taskId)] ?? source[user]?.[task.id];
                     if (ans === 'love') { loveCount++; lovers.push(user); }
                     else if (ans === 'like') { likeCount++; lovers.push(user); }
                     else if (ans === 'neutral') neutralCount++;
@@ -2177,7 +2180,9 @@
                 const priorityScore = totalDislikeCount * 2 + hateCount + (activeCount > 0 ? Math.round(dislikeRatio / 20) : 0);
 
                 return {
-                    ...task,
+                    id: taskId,
+                    name: resolveTaskName(task),
+                    desc: String(task.desc || ''),
                     loveCount, likeCount, neutralCount, dislikeCount, hateCount, unassignedCount,
                     totalDislikeCount, totalLikeCount, activeCount, dislikeRatio, priorityScore,
                     lovers, haters
@@ -2350,8 +2355,44 @@
         }
 
         function getTaskDomainName(taskId) {
-            const domain = TASK_DOMAINS.find(d => d.ids.includes(taskId));
+            const nid = Number(taskId);
+            const domain = TASK_DOMAINS.find(d => d.ids.some(id => Number(id) === nid));
             return domain ? domain.name : "その他";
+        }
+
+        /** 業務表示名（欠け・番号だけ・「1_名前」形式でも正しい名称に戻す） */
+        function resolveTaskName(taskLike) {
+            const id = Number(typeof taskLike === 'object' && taskLike != null ? taskLike.id : taskLike);
+            const raw = (typeof taskLike === 'object' && taskLike != null && taskLike.name != null)
+                ? String(taskLike.name).trim()
+                : '';
+            const fromDefault = DEFAULT_TASKS.find(t => Number(t.id) === id);
+            const fromTasks = TASKS.find(t => Number(t.id) === id);
+
+            // 「14」や「14_旅費…」のようなコードっぽい値はカタログ名を優先
+            const looksLikeCode = !raw || /^\d+$/.test(raw) || /^\d+_/.test(raw);
+            if (!looksLikeCode) return raw;
+            if (fromTasks?.name && !/^\d+$/.test(String(fromTasks.name)) && !/^\d+_/.test(String(fromTasks.name))) {
+                return String(fromTasks.name);
+            }
+            if (fromDefault?.name) return String(fromDefault.name);
+            if (raw.includes('_')) {
+                const rest = raw.replace(/^\d+_/, '').trim();
+                if (rest) return rest;
+            }
+            return raw || (Number.isFinite(id) ? `業務${id}` : '（名称不明）');
+        }
+
+        function repairTasksCatalog() {
+            TASKS = (TASKS && TASKS.length === 50 ? TASKS : DEFAULT_TASKS).map((t, idx) => {
+                const id = Number(t?.id) || (idx + 1);
+                const fallback = DEFAULT_TASKS.find(d => d.id === id) || DEFAULT_TASKS[idx];
+                return {
+                    id,
+                    name: resolveTaskName({ id, name: t?.name || fallback?.name }),
+                    desc: String(t?.desc || fallback?.desc || '')
+                };
+            });
         }
 
         function buildDislikeExtraction(stats, totalRespondents) {
@@ -2362,7 +2403,7 @@
             const domainRows = TASK_DOMAINS.map(domain => {
                 let dislike = 0, active = 0, hate = 0;
                 domain.ids.forEach(id => {
-                    const s = stats.find(t => t.id === id);
+                    const s = stats.find(t => Number(t.id) === Number(id));
                     if (!s) return;
                     dislike += s.totalDislikeCount;
                     hate += s.hateCount;
@@ -2382,10 +2423,11 @@
             insights.push(`回答者は ${totalRespondents} 名です。`);
             insights.push(`嫌い票がある業務は ${disliked.length} 件抽出されました（全${stats.length}業務中）。`);
             if (topThief) {
-                insights.push(`最も嫌い票が多い業務は「${topThief.name}」（合計${topThief.totalDislikeCount}票／大嫌い${topThief.hateCount}票）。`);
+                const thiefName = resolveTaskName(topThief);
+                insights.push(`最も嫌い票が多い業務は「${thiefName}」（合計${topThief.totalDislikeCount}票／大嫌い${topThief.hateCount}票）。`);
             }
             if (highHateRate && highHateRate.dislikeRatio >= 50) {
-                insights.push(`担当内嫌い率が高い業務は「${highHateRate.name}」（嫌い率${Math.round(highHateRate.dislikeRatio)}%）。今後の業務改善・研究の重点候補です。`);
+                insights.push(`担当内嫌い率が高い業務は「${resolveTaskName(highHateRate)}」（嫌い率${Math.round(highHateRate.dislikeRatio)}%）。今後の業務改善・研究の重点候補です。`);
             }
             if (topDomain) {
                 insights.push(`領域としては「${topDomain.name}」に嫌い票が集中しています（${topDomain.dislike}票）。`);
@@ -2416,9 +2458,15 @@
 
             const { disliked, domainRows, insights } = buildDislikeExtraction(stats, totalRespondents);
 
-            insightsEl.innerHTML = insights.map(t =>
-                `<li class="flex gap-2"><span class="text-[#B8956C] shrink-0">・</span><span>${t.replace(/「([^」]+)」/g, '<strong class="text-[#C4878E]">「$1」</strong>').replace(/(\d+)/g, '<strong class="text-[#2A3644]">$1</strong>')}</span></li>`
-            ).join('');
+            insightsEl.innerHTML = insights.map(t => {
+                const safe = String(t)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                // 業務名だけ強調（数字の一括置換は class の色コードを壊すので使わない）
+                const html = safe.replace(/「([^」]+)」/g, '<strong class="text-[#C4878E]">「$1」</strong>');
+                return `<li class="flex gap-2"><span class="text-[#B8956C] shrink-0">・</span><span>${html}</span></li>`;
+            }).join('');
 
             if (countEl) countEl.textContent = `${disliked.length}件を抽出`;
 
