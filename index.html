@@ -3,87 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>さがせ！時間泥棒 - 学校事務 業務診断QUEST</title>
+    <title>さがせ！時間泥棒 - 学校事務の好き嫌い占い</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: VT323 & Press Start 2P for Arcade vibe + Noto Sans JP -->
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Noto+Sans+JP:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Moon Mystique — display mincho + soft gothic -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@500;600;700&display=swap" rel="stylesheet">
     <!-- Canvas Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
+        :root {
+            --mist: #E8EEF4;
+            --mist-deep: #D4DEE9;
+            --pearl: #F8F6F3;
+            --ink: #2A3644;
+            --ink-soft: #5C6B7A;
+            --muted: #8A97A5;
+            --gold: #B8956C;
+            --gold-soft: #D4BC94;
+            --dawn: #8FA3B5;
+            --sage: #7D9B8A;
+            --dust: #C4878E;
+            --panel: rgba(255, 252, 249, 0.78);
+            --line: rgba(184, 149, 108, 0.35);
+        }
+
         body {
-            font-family: 'Noto Sans JP', sans-serif;
+            font-family: 'Zen Kaku Gothic New', sans-serif;
             user-select: none;
-            background-color: #0B0F19;
-            color: #F1F5F9;
+            color: var(--ink);
+            background-color: var(--mist);
+            background-image:
+                radial-gradient(ellipse 120% 80% at 50% -10%, rgba(248, 246, 243, 0.95) 0%, transparent 55%),
+                radial-gradient(ellipse 70% 50% at 100% 20%, rgba(184, 149, 108, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 45% at 0% 80%, rgba(143, 163, 181, 0.22) 0%, transparent 55%),
+                linear-gradient(165deg, #E9EEF4 0%, #F3F0EC 45%, #E4EAF1 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.55;
+            background-image:
+                radial-gradient(1.2px 1.2px at 12% 18%, rgba(184,149,108,0.7) 50%, transparent 51%),
+                radial-gradient(1px 1px at 28% 42%, rgba(42,54,68,0.35) 50%, transparent 51%),
+                radial-gradient(1.4px 1.4px at 67% 22%, rgba(212,188,148,0.8) 50%, transparent 51%),
+                radial-gradient(1px 1px at 82% 58%, rgba(42,54,68,0.3) 50%, transparent 51%),
+                radial-gradient(1.2px 1.2px at 45% 72%, rgba(184,149,108,0.55) 50%, transparent 51%),
+                radial-gradient(1px 1px at 90% 12%, rgba(255,255,255,0.8) 50%, transparent 51%),
+                radial-gradient(1px 1px at 8% 78%, rgba(212,188,148,0.6) 50%, transparent 51%);
+            animation: starTwinkle 6s ease-in-out infinite alternate;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
         }
 
         .font-game {
-            font-family: 'Chakra Petch', 'Press Start 2P', sans-serif;
+            font-family: 'Zen Old Mincho', 'Cormorant Garamond', serif;
+            letter-spacing: 0.04em;
         }
 
-        /* Neon & Gaming Glass UI Tokens */
+        .font-display {
+            font-family: 'Cormorant Garamond', 'Zen Old Mincho', serif;
+        }
+
         .game-panel {
-            background: linear-gradient(135deg, rgba(20, 27, 45, 0.95) 0%, rgba(13, 18, 30, 0.98) 100%);
-            border: 2px solid #2A3655;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            background: var(--panel);
+            border: 1px solid var(--line);
+            box-shadow: 0 10px 40px rgba(42, 54, 68, 0.06);
             border-radius: 1.25rem;
+            backdrop-filter: blur(14px);
         }
 
         .game-panel-glow {
-            border-color: #3B82F6;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), inset 0 0 15px rgba(59, 130, 246, 0.1);
+            border-color: rgba(184, 149, 108, 0.55);
+            box-shadow: 0 12px 40px rgba(143, 163, 181, 0.18), 0 0 0 1px rgba(255,255,255,0.4) inset;
         }
 
-        /* Arcade 3D Buttons */
         .btn-arcade {
             position: relative;
-            transition: all 0.1s ease;
-            box-shadow: 0 6px 0 var(--btn-shadow-color), 0 10px 20px rgba(0,0,0,0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+            box-shadow: 0 3px 0 var(--btn-shadow-color);
             transform: translateY(0);
         }
+        .btn-arcade:hover { filter: brightness(1.03); }
         .btn-arcade:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 var(--btn-shadow-color), 0 4px 10px rgba(0,0,0,0.4);
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 var(--btn-shadow-color);
         }
 
         .btn-like {
-            --btn-shadow-color: #047857;
-            background: linear-gradient(180deg, #10B981 0%, #059669 100%);
-            border: 2px solid #34D399;
+            --btn-shadow-color: #5F7D6C;
+            background: linear-gradient(180deg, #9BB5A6 0%, #7D9B8A 100%);
+            border: 1px solid #B7CBBF;
+            color: #fff;
         }
         .btn-love {
-            --btn-shadow-color: #831843;
-            background: linear-gradient(180deg, #EC4899 0%, #DB2777 100%);
-            border: 2px solid #F472B6;
+            --btn-shadow-color: #A06B74;
+            background: linear-gradient(180deg, #D4A3AA 0%, #C4878E 100%);
+            border: 1px solid #E2C0C5;
+            color: #fff;
         }
         .btn-neutral {
-            --btn-shadow-color: #1E3A8A;
-            background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
-            border: 2px solid #60A5FA;
+            --btn-shadow-color: #6E8194;
+            background: linear-gradient(180deg, #A8B8C7 0%, #8FA3B5 100%);
+            border: 1px solid #C5D0DB;
+            color: #fff;
         }
         .btn-dislike {
-            --btn-shadow-color: #9A3412;
-            background: linear-gradient(180deg, #F97316 0%, #EA580C 100%);
-            border: 2px solid #FB923C;
+            --btn-shadow-color: #8A7260;
+            background: linear-gradient(180deg, #C4A78E 0%, #A88B74 100%);
+            border: 1px solid #D9C4B2;
+            color: #fff;
         }
         .btn-hate {
-            --btn-shadow-color: #881337;
-            background: linear-gradient(180deg, #E11D48 0%, #BE123C 100%);
-            border: 2px solid #FB7185;
+            --btn-shadow-color: #7A5B62;
+            background: linear-gradient(180deg, #B07A82 0%, #96656D 100%);
+            border: 1px solid #CFA6AC;
+            color: #fff;
         }
         .btn-none {
-            --btn-shadow-color: #334155;
-            background: linear-gradient(180deg, #64748B 0%, #475569 100%);
-            border: 2px solid #94A3B8;
+            --btn-shadow-color: #7A8694;
+            background: linear-gradient(180deg, #B8C0CA 0%, #98A3B0 100%);
+            border: 1px solid #D0D6DE;
+            color: #fff;
         }
 
-        /* Card Slide Transitions */
         .card-enter {
-            animation: cardGamePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: oracleFadeIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .card-exit-left {
             animation: cardGameOutLeft 0.22s ease-in forwards;
@@ -92,153 +148,141 @@
             animation: cardGameOutRight 0.22s ease-in forwards;
         }
 
-        @keyframes cardGamePop {
-            0% {
-                opacity: 0;
-                transform: scale(0.85) translateY(30px) rotate(-2deg);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0) rotate(0deg);
-            }
+        @keyframes oracleFadeIn {
+            0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-
         @keyframes cardGameOutLeft {
-            to {
-                opacity: 0;
-                transform: translateX(-140px) rotate(-12deg) scale(0.9);
-            }
+            to { opacity: 0; transform: translateX(-100px) scale(0.96); }
         }
-
         @keyframes cardGameOutRight {
-            to {
-                opacity: 0;
-                transform: translateX(140px) rotate(12deg) scale(0.9);
-            }
+            to { opacity: 0; transform: translateX(100px) scale(0.96); }
         }
+        @keyframes starTwinkle {
+            0% { opacity: 0.4; }
+            100% { opacity: 0.75; }
+        }
+        @keyframes moonFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .moon-float { animation: moonFloat 4.5s ease-in-out infinite; }
 
-        /* Toast Speech Bubble Animation (約3秒表示して消える) */
         @keyframes toastBubble {
-            0% { opacity: 0; transform: translateY(-12px) scale(0.9); }
-            8% { opacity: 1; transform: translateY(0) scale(1.05); }
+            0% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+            8% { opacity: 1; transform: translateY(0) scale(1); }
             85% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+            100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
         }
         .toast-anim {
             animation: toastBubble 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* Big Countdown Zoom */
         @keyframes countZoom {
-            0% { transform: scale(0.2); opacity: 0; filter: blur(10px); }
-            50% { transform: scale(1.25); opacity: 1; filter: blur(0); }
-            100% { transform: scale(1.5); opacity: 0; }
+            0% { transform: scale(0.4); opacity: 0; }
+            45% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
         }
         .count-zoom-anim {
             animation: countZoom 0.85s ease-out forwards;
         }
 
-        /* Modal Animation */
         @keyframes modalPop {
-            0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+            0% { transform: scale(0.96) translateY(12px); opacity: 0; }
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
         .animate-modal {
-            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 6px;
-            width: 6px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #0F172A;
+            background: rgba(212, 222, 233, 0.5);
             border-radius: 9999px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: rgba(184, 149, 108, 0.55);
             border-radius: 9999px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #64748B;
+            background: rgba(184, 149, 108, 0.8);
         }
 
-        /* Print report (1枚PDF用) */
-        #print-report {
-            display: none;
+        /* Theme helpers for remaining dark utility classes */
+        .oracle-tabs {
+            background: rgba(255,252,249,0.7);
+            border: 1px solid var(--line);
         }
+        .oracle-input {
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(184,149,108,0.45);
+            color: var(--ink);
+        }
+        .oracle-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(184,149,108,0.15);
+        }
+
+        #print-report { display: none; }
         @media print {
-            @page {
-                size: A4 portrait;
-                margin: 10mm;
-            }
+            @page { size: A4 portrait; margin: 10mm; }
             html, body {
                 background: #fff !important;
                 color: #111 !important;
             }
-            body * {
-                visibility: hidden;
-            }
-            #print-report, #print-report * {
-                visibility: visible;
-            }
+            body::before { display: none !important; }
+            body * { visibility: hidden; }
+            #print-report, #print-report * { visibility: visible; }
             #print-report {
                 display: block !important;
                 position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 0;
-                color: #111;
-                background: #fff;
-                font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+                left: 0; top: 0; width: 100%;
+                padding: 0; color: #111; background: #fff;
+                font-family: "Hiragino Sans", "Zen Kaku Gothic New", "Yu Gothic", sans-serif;
             }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased bg-[#070A12] text-slate-100 selection:bg-indigo-500 selection:text-white">
+<body class="min-h-screen flex flex-col antialiased text-[#2A3644] selection:bg-[#D4BC94] selection:text-[#2A3644]">
 
-    <!-- Game HUD Header Bar -->
-    <header class="bg-[#0D1322]/90 border-b-2 border-indigo-500/40 sticky top-0 z-40 backdrop-blur-md shadow-lg shadow-indigo-950/50">
+    <!-- Soft oracle header -->
+    <header class="bg-[#F8F6F3]/80 border-b border-[#D4BC94]/40 sticky top-0 z-40 backdrop-blur-md">
         <div class="max-w-5xl mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-between h-16">
                 
-                <!-- Game Logo Header -->
                 <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('survey')">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/40 border border-indigo-400/50">
-                        <i class="fa-solid fa-[#fa-gamepad] fa-stopwatch text-lg animate-pulse"></i>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#F8F6F3] to-[#D4DEE9] text-[#B8956C] flex items-center justify-center border border-[#D4BC94]/60 moon-float">
+                        <i class="fa-solid fa-moon text-lg"></i>
                     </div>
                     <div>
                         <div class="flex items-center space-x-2">
-                            <h1 class="font-black text-white text-base sm:text-lg tracking-wider font-game bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-indigo-300 to-pink-400">
+                            <h1 class="font-semibold text-[#2A3644] text-lg sm:text-xl tracking-wide font-game">
                                 さがせ！時間泥棒
                             </h1>
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-950 border border-indigo-500/50 text-indigo-300 font-game">QUEST</span>
+                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[#E8EEF4] border border-[#D4BC94]/50 text-[#8FA3B5] font-game">診断</span>
                         </div>
-                        <p class="text-[11px] text-slate-400 font-medium hidden sm:block">学校事務 業務標準化 ＆ 8タイプジョブ診断</p>
+                        <p class="text-[11px] text-[#8A97A5] font-medium hidden sm:block">学校事務の好き嫌い占い ＆ 8タイプ診断</p>
                     </div>
                 </div>
 
-                <!-- Navigation Action Tabs -->
                 <div class="flex items-center space-x-2">
-                    <nav class="flex space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
-                        <button id="nav-survey" onclick="switchTab('survey')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5">
-                            <i class="fa-solid fa-crosshairs text-cyan-300"></i>
+                    <nav class="flex space-x-1 oracle-tabs p-1 rounded-xl">
+                        <button id="nav-survey" onclick="switchTab('survey')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-sparkles text-[#F8F6F3]"></i>
                             <span>調査</span>
                         </button>
-                        <button id="nav-ranking" onclick="switchTab('ranking')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
-                            <i class="fa-solid fa-trophy text-amber-400"></i>
+                        <button id="nav-ranking" onclick="switchTab('ranking')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-star text-[#D4BC94]"></i>
                             <span>集計・分析</span>
                         </button>
-                        <button id="nav-matrix" onclick="switchTab('matrix')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
-                            <i class="fa-solid fa-chart-grid text-emerald-400"></i>
+                        <button id="nav-matrix" onclick="switchTab('matrix')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-table-cells text-[#8FA3B5]"></i>
                             <span class="hidden sm:inline">マトリクス</span>
                         </button>
                     </nav>
 
-                    <!-- Admin Gear Button -->
-                    <button onclick="openAdminModal()" title="業務項目カスタマイズ" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition border border-slate-800 flex items-center justify-center">
+                    <button onclick="openAdminModal()" title="業務項目カスタマイズ" class="w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-[#8A97A5] hover:text-[#B8956C] transition border border-[#D4BC94]/40 flex items-center justify-center">
                         <i class="fa-solid fa-sliders text-sm"></i>
                     </button>
                 </div>
@@ -355,9 +399,9 @@
                 id: "financial_guardian",
                 name: "金の番人",
                 tagline: "1円の狂いも許さない！堅実と信頼の財政パラディン",
-                color: "from-amber-500 to-yellow-600",
-                border: "border-amber-400",
-                badgeBg: "bg-amber-950 text-amber-300 border-amber-700",
+                color: "from-[#D4BC94] to-[#B8956C]",
+                border: "border-[#D4BC94]",
+                badgeBg: "bg-[#F4F0E8] text-[#B8956C] border-[#D4BC94]",
                 traits: ["数字の整合性に強い", "決算がぴったり合うと快感", "予算執行の残高管理が完璧"],
                 desc: "予算管理や決算会計業務を得意とするあなたは「金の番人」。1円の誤差も見逃さない緻密な計算力と論理的思考を持ち、学校の財政的信頼を支えます。",
                 matchTask: "公費決算・物品発注・予算配分"
@@ -366,9 +410,9 @@
                 id: "benevolent_mother",
                 name: "認定の母",
                 tagline: "困った保護者・生徒を包み込む慈愛のヒーラー",
-                color: "from-pink-500 to-rose-600",
-                border: "border-pink-400",
-                badgeBg: "bg-pink-950 text-pink-300 border-pink-700",
+                color: "from-[#D4A3AA] to-[#C4878E]",
+                border: "border-[#C4878E]",
+                badgeBg: "bg-[#F6ECEE] text-[#C4878E] border-[#C4878E]/50",
                 traits: ["保護者の相談に丁寧に対応", "複雑な受給要件を優しく整理", "支援の決定にやりがいを感じる"],
                 desc: "就学援助や奨学金などの手続に親身に取り組むあなたは「認定の母」。制度の狭間で悩む家庭に寄り添い、必要な支援を確実に届ける頼れるバランサーです。",
                 matchTask: "就学援助・奨学金・就学奨励費"
@@ -377,9 +421,9 @@
                 id: "labor_strategist",
                 name: "労務の司令塔",
                 tagline: "教職員の労働環境を陰から統括する戦略家",
-                color: "from-indigo-500 to-blue-600",
-                border: "border-indigo-400",
-                badgeBg: "bg-indigo-950 text-indigo-300 border-indigo-700",
+                color: "from-[#A8B8C7] to-[#8FA3B5]",
+                border: "border-[#8FA3B5]",
+                badgeBg: "bg-[#F4F6F9] text-[#8FA3B5] border-[#D4BC94]/45",
                 traits: ["年末調整の確認手際が早い", "手当や出張規程を熟知", "勤怠管理のルールに厳格"],
                 desc: "人事・給与・勤怠手続が得意なあなたは「労務の司令塔」。教職員の複雑な権利や手当を正しく把握し、スムーズな学校運営の土台を静かに固めます。",
                 matchTask: "年末調整・旅費精算・通勤手当"
@@ -388,9 +432,9 @@
                 id: "castle_repairer",
                 name: "城の修繕士",
                 tagline: "学校のピンチを即解決！フットワーク軽快な現場のナイト",
-                color: "from-orange-500 to-amber-600",
-                border: "border-orange-400",
-                badgeBg: "bg-orange-950 text-orange-300 border-orange-700",
+                color: "from-[#C4A78E] to-[#A88B74]",
+                border: "border-[#A88B74]",
+                badgeBg: "bg-[#F4EEE8] text-[#A88B74] border-[#A88B74]/40",
                 traits: ["校内の異変に早く気づく", "業者との連携・調整が円滑", "動きのある実務が好き"],
                 desc: "施設・設備修繕や備品管理に燃えるあなたは「城の修繕士」。破損や点検トラブルを手際よく手配し、安全で快適な教育環境をつくり出します。",
                 matchTask: "施設破損修繕・備品管理・点検窓口"
@@ -399,9 +443,9 @@
                 id: "registry_master",
                 name: "学籍の記録者",
                 tagline: "子供たちの歴史を未来へ紡ぐ、正確無比なクロニクラー",
-                color: "from-emerald-500 to-teal-600",
-                border: "border-emerald-400",
-                badgeBg: "bg-emerald-950 text-emerald-300 border-emerald-700",
+                color: "from-[#9BB5A6] to-[#7D9B8A]",
+                border: "border-[#7D9B8A]",
+                badgeBg: "bg-[#E8F0EC] text-[#7D9B8A] border-[#7D9B8A]/40",
                 traits: ["証明書発行の手際が綺麗", "要録や転出入データの管理が緻密", "過去データの検索がスピーディ"],
                 desc: "学籍や各種証明書発行、要録管理を得意とするあなたは「学籍の記録者」。間違いが許されない大切な記録を整然と整理し、未来へ正確につなぎます。",
                 matchTask: "学籍作成・各種証明書発行・転出入事務"
@@ -410,9 +454,9 @@
                 id: "frontline_shield",
                 name: "防波堤の盾",
                 tagline: "どんな突然の来客・電話も笑顔で打ち返すガーディアン",
-                color: "from-cyan-400 to-blue-500",
-                border: "border-cyan-400",
-                badgeBg: "bg-cyan-950 text-cyan-300 border-cyan-700",
+                color: "from-[#B7C6D3] to-[#8FA3B5]",
+                border: "border-[#8FA3B5]",
+                badgeBg: "bg-[#EEF2F6] text-[#8FA3B5] border-[#8FA3B5]/40",
                 traits: ["電話対応の第一声が爽やか", "施設対外貸出などの調整が円滑", "突発的な来客応対が得意"],
                 desc: "窓口・電話応対や施設開放手続を得意とするあなたは「防波堤の盾」。学校の第一線で明るく丁寧に対応し、学内の安心感を高める守護神です。",
                 matchTask: "窓口・電話一次対応・施設対外貸出"
@@ -421,9 +465,9 @@
                 id: "invincible_allrounder",
                 name: "無敵のオールラウンダー",
                 tagline: "どんな業務も軽やかに裁く！死角なしのスーパー事務官",
-                color: "from-purple-500 to-pink-600",
-                border: "border-purple-400",
-                badgeBg: "bg-purple-950 text-purple-300 border-purple-700",
+                color: "from-[#B8A9B5] to-[#9A8A96]",
+                border: "border-[#9A8A96]",
+                badgeBg: "bg-[#F1ECEF] text-[#8A7A86] border-[#B8A9B5]",
                 traits: ["全領域の業務に柔軟に対応", "フットワークが軽く処理がスピーディ", "1人で事務室を回せる順応力"],
                 desc: "多くの業務に前向きに取り組むあなたは「無敵のオールラウンダー」。適応力が高く、どんな場面や異動先でも即戦力としてマルチに大活躍します。",
                 matchTask: "全事務業務（マルチタスク領域）"
@@ -432,9 +476,9 @@
                 id: "maverick_reformer",
                 name: "自由を求める改革者",
                 tagline: "無駄な紙・手作業を撲滅！DXと効率化を狙うイノベーター",
-                color: "from-rose-500 to-red-600",
-                border: "border-rose-400",
-                badgeBg: "bg-rose-950 text-rose-300 border-rose-700",
+                color: "from-[#C4878E] to-[#A87880]",
+                border: "border-[#C4878E]",
+                badgeBg: "bg-[#F6ECEE] text-[#C4878E] border-[#C4878E]/50",
                 traits: ["効率化のアイデアが豊富", "デジタル化・Webフォーム化を推進", "ルーティン作業の無駄を省きたい"],
                 desc: "煩雑な従来業務に疑問や改善の必要性を感じるあなたは「自由を求める改革者」。既存のやり方に捉われず、効率化で学校事務に良い変化を起こすポテンシャルを持ちます。",
                 matchTask: "ICT端末ID管理・アンケート集計・業務効率化"
@@ -449,18 +493,18 @@
         <div id="view-survey" class="space-y-5 my-auto">
             
             <!-- User Status & Game HUD Status Bar -->
-            <div class="game-panel p-4 sm:p-5 border border-indigo-500/30">
+            <div class="game-panel p-4 sm:p-5 border border-[#D4BC94]/35">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     
                     <!-- Player Profile Info -->
                     <div class="flex items-center space-x-3">
-                        <div class="w-11 h-11 rounded-xl bg-indigo-950/80 text-cyan-400 flex items-center justify-center font-black border border-indigo-500/50 shadow-inner shrink-0">
-                            <i class="fa-solid fa-user-ninja text-lg"></i>
+                        <div class="w-11 h-11 rounded-full bg-[#F4F6F9] text-[#B8956C] flex items-center justify-center font-semibold border border-[#D4BC94]/50 shrink-0">
+                            <i class="fa-solid fa-moon text-lg"></i>
                         </div>
                         <div>
-                            <div class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider font-game">ニックネーム</div>
+                            <div class="text-[10px] text-[#8FA3B5] font-bold uppercase tracking-wider font-game">ニックネーム</div>
                             <div class="flex items-center space-x-2">
-                                <span id="current-nickname-display" class="font-extrabold text-white text-base">ゲスト</span>
+                                <span id="current-nickname-display" class="font-extrabold text-[#2A3644] text-base">ゲスト</span>
                             </div>
                         </div>
                     </div>
@@ -468,26 +512,26 @@
                     <!-- Progress Gauge Bar (QUEST EXP) -->
                     <div class="flex-grow max-w-xs">
                         <div class="flex justify-between text-xs font-bold mb-1 font-game">
-                            <span class="text-indigo-300">QUEST PROGRESS <span id="progress-text" class="text-cyan-400 font-extrabold">0 / 50</span></span>
-                            <span id="progress-percent" class="text-amber-400 font-black">0%</span>
+                            <span class="text-[#8FA3B5]">進捗 <span id="progress-text" class="text-[#B8956C] font-extrabold">0 / 50</span></span>
+                            <span id="progress-percent" class="text-[#B8956C] font-black">0%</span>
                         </div>
-                        <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
-                            <div id="progress-bar" class="bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 h-full rounded-full transition-all duration-300 shadow-lg shadow-cyan-500/50" style="width: 0%"></div>
+                        <div class="w-full bg-[#F4F6F9] rounded-full h-3 overflow-hidden border border-[#D4DEE9] p-0.5">
+                            <div id="progress-bar" class="bg-gradient-to-r from-[#D4BC94] via-[#B8956C] to-[#8FA3B5] h-full rounded-full transition-all duration-300 shadow-lg" style="width: 0%"></div>
                         </div>
                     </div>
 
                     <!-- Diagnosis Result Trigger & Mode Toggle -->
                     <div class="flex items-center space-x-2 shrink-0">
-                        <button id="btn-show-my-diagnosis" onclick="showDiagnosisModalForCurrent()" class="hidden px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-indigo-600/40 border border-cyan-300/40 transition flex items-center space-x-1.5 animate-pulse">
-                            <i class="fa-solid fa-sparkles text-amber-300"></i>
-                            <span>ジョブ診断を見る</span>
+                        <button id="btn-show-my-diagnosis" onclick="showDiagnosisModalForCurrent()" class="hidden px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#C9A962] to-[#B8956C] text-white shadow-lg border border-[#D4BC94]/40 transition flex items-center space-x-1.5 animate-pulse">
+                            <i class="fa-solid fa-sparkles text-white"></i>
+                            <span>診断結果を見る</span>
                         </button>
 
-                        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                            <button id="btn-mode-deck" onclick="setSurveyMode('deck')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition">
+                        <div class="flex bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9]">
+                            <button id="btn-mode-deck" onclick="setSurveyMode('deck')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition">
                                 カード
                             </button>
-                            <button id="btn-mode-list" onclick="setSurveyMode('list')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">
+                            <button id="btn-mode-list" onclick="setSurveyMode('list')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition">
                                 一覧
                             </button>
                         </div>
@@ -501,7 +545,7 @@
                 
                 <!-- Toast Message Popup (Encouragement Speech Bubble) -->
                 <div id="cheer-bubble" class="hidden absolute -top-5 left-1/2 -translate-x-1/2 z-30 pointer-events-none w-full max-w-md text-center px-2">
-                    <div id="cheer-message-text" class="bg-slate-900/95 text-cyan-300 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-cyan-500/50 inline-block backdrop-blur-md">
+                    <div id="cheer-message-text" class="bg-white/95 text-[#5C6B7A] font-medium text-xs sm:text-sm px-4 py-2.5 rounded-2xl border border-[#D4BC94]/55 inline-block backdrop-blur-md">
                         メッセージ
                     </div>
                 </div>
@@ -512,28 +556,28 @@
                     <div>
                         <!-- Header inside Card -->
                         <div class="flex items-center justify-between mb-4">
-                            <span id="card-no" class="bg-indigo-950/80 text-cyan-300 border border-indigo-500/40 text-xs font-extrabold px-3 py-1 rounded-lg font-game">
-                                STAGE Q. 1 / 50
+                            <span id="card-no" class="bg-[#F4F6F9] text-[#B8956C] border border-[#D4BC94]/40 text-xs font-extrabold px-3 py-1 rounded-lg font-game">
+                                問い 1 / 50
                             </span>
 
-                            <span id="card-status-badge" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-900 text-slate-500 border border-slate-800">
+                            <span id="card-status-badge" class="text-xs font-bold px-3 py-1 rounded-lg bg-[#EEF2F6] text-[#8A97A5] border border-[#D4DEE9]">
                                 未選択
                             </span>
                         </div>
 
                         <!-- Task Title & Description -->
                         <div class="space-y-3 my-4">
-                            <h2 id="card-task-name" class="text-2xl md:text-3xl font-black text-white tracking-wide leading-snug">
+                            <h2 id="card-task-name" class="text-2xl md:text-3xl font-semibold font-game text-[#2A3644] tracking-wide leading-snug">
                                 年末調整
                             </h2>
-                            <p id="card-task-desc" class="text-slate-300 text-sm sm:text-base leading-relaxed bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+                            <p id="card-task-desc" class="text-[#5C6B7A] text-sm sm:text-base leading-relaxed bg-white/60 p-4 rounded-xl border border-[#D4DEE9]">
                                 扶養控除申告書・保険料控除等の回収、システム入力、控え確認
                             </p>
                         </div>
                     </div>
 
                     <!-- Choice Action Arcade 3D Buttons -->
-                    <div class="space-y-4 pt-4 border-t border-slate-800">
+                    <div class="space-y-4 pt-4 border-t border-[#D4DEE9]">
                         <div class="grid grid-cols-5 gap-1.5 sm:gap-2.5">
                             
                             <!-- LOVE BUTTON (Key 1) -->
@@ -566,7 +610,7 @@
 
                             <!-- HATE BUTTON (Key 5) -->
                             <button id="btn-choice-hate" onclick="submitDeckAnswer('hate')" class="btn-arcade btn-hate p-2.5 sm:p-3.5 rounded-2xl flex flex-col items-center justify-center text-white transition">
-                                <i class="fa-solid fa-skull text-xl sm:text-2xl mb-1"></i>
+                                <i class="fa-solid fa-cloud-moon text-xl sm:text-2xl mb-1"></i>
                                 <span class="font-extrabold text-xs sm:text-sm">大嫌い</span>
                                 <span class="text-[9px] opacity-80 mt-0.5 hidden sm:inline font-game">[ 5 ]</span>
                             </button>
@@ -581,13 +625,13 @@
                         </button>
 
                         <!-- Card Navigation Footer -->
-                        <div class="flex items-center justify-between text-xs text-slate-400 font-bold px-1 pt-1">
-                            <button onclick="prevDeckCard()" class="hover:text-cyan-400 flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-slate-900 transition">
+                        <div class="flex items-center justify-between text-xs text-[#8A97A5] font-bold px-1 pt-1">
+                            <button onclick="prevDeckCard()" class="hover:text-[#B8956C] flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-[#EEF2F6] transition">
                                 <i class="fa-solid fa-arrow-left"></i>
                                 <span>前へ</span>
                             </button>
 
-                            <button onclick="nextDeckCard()" class="hover:text-cyan-400 flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-slate-900 transition">
+                            <button onclick="nextDeckCard()" class="hover:text-[#B8956C] flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-[#EEF2F6] transition">
                                 <span>スキップ</span>
                                 <i class="fa-solid fa-arrow-right"></i>
                             </button>
@@ -600,8 +644,8 @@
             <!-- MODE B: LIST VIEW -->
             <div id="survey-list-container" class="hidden space-y-3">
                 <div class="flex items-center justify-between game-panel p-4">
-                    <span class="text-xs font-bold text-slate-400">全50項目 一覧コマンド入力</span>
-                    <button onclick="clearCurrentResponses()" class="text-xs bg-rose-950 hover:bg-rose-900 text-rose-300 px-3 py-1.5 rounded-lg font-bold border border-rose-800 transition">
+                    <span class="text-xs font-bold text-[#8A97A5]">全50項目の一覧</span>
+                    <button onclick="clearCurrentResponses()" class="text-xs bg-[#F6ECEE] hover:bg-[#EEDFE2] text-[#C4878E] px-3 py-1.5 rounded-lg font-bold border border-[#C4878E]/40 transition">
                         この回答者の入力クリア
                     </button>
                 </div>
@@ -620,21 +664,21 @@
             <div class="game-panel p-4 space-y-3">
                 <div class="grid grid-cols-3 gap-3 text-center">
                     <div>
-                        <div class="text-[10px] text-slate-400 font-bold">回答者（シート）</div>
-                        <div id="stat-respondent-count" class="text-lg font-black text-white">--名</div>
+                        <div class="text-[10px] text-[#8A97A5] font-bold">回答者（シート）</div>
+                        <div id="stat-respondent-count" class="text-lg font-black text-[#2A3644]">--名</div>
                     </div>
                     <div>
-                        <div class="text-[10px] text-rose-400 font-bold">時間泥棒 1位</div>
-                        <div id="stat-top-dislike" class="text-sm font-extrabold text-rose-300 truncate px-1">--</div>
+                        <div class="text-[10px] text-[#C4878E] font-bold">時間泥棒 1位</div>
+                        <div id="stat-top-dislike" class="text-sm font-extrabold text-[#C4878E] truncate px-1">--</div>
                     </div>
                     <div>
-                        <div class="text-[10px] text-emerald-400 font-bold">得意・好き 1位</div>
-                        <div id="stat-top-like" class="text-sm font-extrabold text-emerald-300 truncate px-1">--</div>
+                        <div class="text-[10px] text-[#7D9B8A] font-bold">得意・好き 1位</div>
+                        <div id="stat-top-like" class="text-sm font-extrabold text-[#7D9B8A] truncate px-1">--</div>
                     </div>
                 </div>
-                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800">
-                    <p id="cloud-data-status" class="text-[11px] text-slate-400">スプレッドシートから読込中...</p>
-                    <button onclick="reloadCloudAndRefresh()" class="text-[11px] font-bold text-cyan-300 hover:text-white px-2.5 py-1 rounded-lg border border-slate-700 hover:bg-slate-900 transition">
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D4DEE9]">
+                    <p id="cloud-data-status" class="text-[11px] text-[#8A97A5]">スプレッドシートから読込中...</p>
+                    <button onclick="reloadCloudAndRefresh()" class="text-[11px] font-bold text-[#B8956C] hover:text-[#2A3644] px-2.5 py-1 rounded-lg border border-[#D4BC94]/45 hover:bg-[#EEF2F6] transition">
                         シートを再読込
                     </button>
                 </div>
@@ -642,15 +686,15 @@
 
             <!-- Sub navigation -->
             <div class="flex items-center justify-between gap-2 flex-wrap">
-                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                    <button id="btn-panel-rank" onclick="setRankingPanel('rank')" class="px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition">
+                <div class="flex bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9]">
+                    <button id="btn-panel-rank" onclick="setRankingPanel('rank')" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition">
                         ランキング
                     </button>
-                    <button id="btn-panel-analysis" onclick="setRankingPanel('analysis')" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">
+                    <button id="btn-panel-analysis" onclick="setRankingPanel('analysis')" class="px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition">
                         分析
                     </button>
                 </div>
-                <button onclick="openCharacterCatalogModal()" class="px-3 py-2 text-xs font-bold rounded-xl bg-slate-900 text-cyan-300 border border-slate-700 hover:bg-slate-800 transition">
+                <button onclick="openCharacterCatalogModal()" class="px-3 py-2 text-xs font-bold rounded-xl bg-[#EEF2F6] text-[#B8956C] border border-[#D4BC94]/45 hover:bg-[#E4EAF1] transition">
                     8タイプ図鑑
                 </button>
             </div>
@@ -658,22 +702,22 @@
             <!-- PANEL: Simple Ranking -->
             <div id="panel-rank" class="space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button type="button" onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white">
+                    <div class="flex bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9]">
+                        <button type="button" onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#C4878E] text-white">
                             嫌いランキング
                         </button>
-                        <button type="button" onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white">
+                        <button type="button" onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-lg text-[#8A97A5] hover:text-[#2A3644]">
                             好きランキング
                         </button>
                     </div>
-                    <button id="btn-toggle-rank-limit" onclick="toggleRankingLimit()" class="text-xs text-slate-400 hover:text-cyan-300 font-bold px-2 py-1">
+                    <button id="btn-toggle-rank-limit" onclick="toggleRankingLimit()" class="text-xs text-[#8A97A5] hover:text-[#B8956C] font-bold px-2 py-1">
                         すべて表示
                     </button>
                 </div>
 
-                <p id="rank-helper-text" class="text-xs text-rose-300/90 px-1 font-bold">いま表示中: 嫌いが多い業務順（大嫌いも嫌いに合算）</p>
+                <p id="rank-helper-text" class="text-xs text-[#C4878E]/90 px-1 font-bold">いま表示中: 嫌いが多い業務順（大嫌いも嫌いに合算）</p>
 
-                <div id="ranking-list" class="game-panel overflow-hidden divide-y divide-slate-800/80">
+                <div id="ranking-list" class="game-panel overflow-hidden divide-y divide-[#E4EAF1]">
                     <!-- rows -->
                 </div>
             </div>
@@ -681,35 +725,35 @@
             <!-- PANEL: Analysis（嫌い業務の抽出・研究用） -->
             <div id="panel-analysis" class="hidden space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-xs text-slate-400">嫌い・大嫌いの回答から、研究用の「時間泥棒業務」を抽出します</p>
-                    <button onclick="exportAnalysisPdf()" class="text-xs font-bold bg-rose-700 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1.5">
+                    <p class="text-xs text-[#8A97A5]">嫌い・大嫌いの回答から、研究用の「時間泥棒業務」を抽出します</p>
+                    <button onclick="exportAnalysisPdf()" class="text-xs font-bold bg-[#C4878E] hover:bg-[#B77880] text-white px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1.5">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>分析結果を1枚PDFで出力</span>
                     </button>
                 </div>
 
                 <div class="game-panel p-5 space-y-3">
-                    <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-lightbulb text-amber-300"></i>
+                    <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-[#B8956C]"></i>
                         <span>研究メモ（要点）</span>
                     </h3>
-                    <ul id="analysis-insights" class="space-y-2 text-sm text-slate-300 leading-relaxed">
+                    <ul id="analysis-insights" class="space-y-2 text-sm text-[#5C6B7A] leading-relaxed">
                         <!-- bullets -->
                     </ul>
                 </div>
 
                 <div class="game-panel p-5 space-y-3">
                     <div class="flex items-center justify-between gap-2">
-                        <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-skull text-rose-400"></i>
+                        <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                            <i class="fa-solid fa-cloud-moon text-[#C4878E]"></i>
                             <span>抽出：嫌いな業務一覧</span>
                         </h3>
-                        <span id="analysis-dislike-count" class="text-[11px] text-slate-500"></span>
+                        <span id="analysis-dislike-count" class="text-[11px] text-[#8A97A5]"></span>
                     </div>
-                    <p class="text-[11px] text-slate-500">嫌い票（嫌い＋大嫌い）が1票以上の業務のみ表示。票数が多い順です。</p>
-                    <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl">
+                    <p class="text-[11px] text-[#8A97A5]">嫌い票（嫌い＋大嫌い）が1票以上の業務のみ表示。票数が多い順です。</p>
+                    <div class="overflow-x-auto custom-scrollbar border border-[#D4DEE9] rounded-xl">
                         <table class="w-full text-xs text-left">
-                            <thead class="bg-slate-900 text-slate-300">
+                            <thead class="bg-[#EEF2F6] text-[#5C6B7A]">
                                 <tr>
                                     <th class="p-2.5 w-10">順</th>
                                     <th class="p-2.5">業務名</th>
@@ -720,18 +764,18 @@
                                     <th class="p-2.5">領域</th>
                                 </tr>
                             </thead>
-                            <tbody id="analysis-dislike-table" class="divide-y divide-slate-800 bg-slate-950/40">
+                            <tbody id="analysis-dislike-table" class="divide-y divide-[#E4EAF1] bg-[#F4F6F9]/40">
                             </tbody>
                         </table>
                     </div>
                 </div>
 
                 <div class="game-panel p-5 space-y-3">
-                    <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-cyan-300"></i>
+                    <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-[#B8956C]"></i>
                         <span>領域別の嫌い集中度</span>
                     </h3>
-                    <p class="text-[11px] text-slate-500">どの業務領域に「嫌い」が集まっているかを示します</p>
+                    <p class="text-[11px] text-[#8A97A5]">どの業務領域に「嫌い」が集まっているかを示します</p>
                     <div id="analysis-domains" class="space-y-2.5">
                     </div>
                 </div>
@@ -745,28 +789,28 @@
             <div class="game-panel p-5 space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h2 class="text-base font-extrabold text-white">集計マトリクス表</h2>
-                        <p class="text-xs text-slate-400">緑: 好き / 赤: 嫌い / 灰: 未実施</p>
+                        <h2 class="text-base font-extrabold text-[#2A3644]">集計マトリクス表</h2>
+                        <p class="text-xs text-[#8A97A5]">緑: 好き / 赤: 嫌い / 灰: 未実施</p>
                     </div>
                 </div>
 
                 <!-- Scrollable Matrix Table -->
-                <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl bg-slate-950/60">
+                <div class="overflow-x-auto custom-scrollbar border border-[#D4DEE9] rounded-xl bg-white/50">
                     <table class="w-full text-xs text-left border-collapse min-w-[650px]">
-                        <thead class="bg-slate-900 text-slate-300 uppercase font-bold border-b border-slate-800">
+                        <thead class="bg-[#EEF2F6] text-[#5C6B7A] uppercase font-bold border-b border-[#D4DEE9]">
                             <tr>
-                                <th class="p-2.5 border-r border-slate-800 w-10 text-center">No.</th>
-                                <th class="p-2.5 border-r border-slate-800 min-w-[180px]">業務名</th>
-                                <th id="matrix-header-users" class="p-0 border-r border-slate-800">
-                                    <div id="matrix-user-headers" class="flex text-center divide-x divide-slate-800">
+                                <th class="p-2.5 border-r border-[#D4DEE9] w-10 text-center">No.</th>
+                                <th class="p-2.5 border-r border-[#D4DEE9] min-w-[180px]">業務名</th>
+                                <th id="matrix-header-users" class="p-0 border-r border-[#D4DEE9]">
+                                    <div id="matrix-user-headers" class="flex text-center divide-x divide-[#E4EAF1]">
                                         <!-- Dynamic user header columns -->
                                     </div>
                                 </th>
-                                <th class="p-2.5 text-center bg-rose-950/60 text-rose-300 w-14">嫌い</th>
-                                <th class="p-2.5 text-center bg-emerald-950/60 text-emerald-300 w-14">好き</th>
+                                <th class="p-2.5 text-center bg-[#F6ECEE]/60 text-[#C4878E] w-14">嫌い</th>
+                                <th class="p-2.5 text-center bg-[#E8F0EC]/60 text-[#7D9B8A] w-14">好き</th>
                             </tr>
                         </thead>
-                        <tbody id="matrix-table-body" class="divide-y divide-slate-900/80 bg-slate-950/30">
+                        <tbody id="matrix-table-body" class="divide-y divide-[#E4EAF1] bg-[#F4F6F9]/30">
                             <!-- Rows generated dynamically -->
                         </tbody>
                     </table>
@@ -777,70 +821,70 @@
     </main>
 
     <!-- OVERLAY 1: WELCOME / PLAYER SELECT MODAL -->
-    <div id="modal-nickname" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="game-panel game-panel-glow max-w-sm w-full p-6 relative animate-modal my-auto text-center space-y-5 border-2 border-indigo-500/50">
+    <div id="modal-nickname" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="game-panel game-panel-glow max-w-sm w-full p-7 relative animate-modal my-auto text-center space-y-5">
             
-            <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white rounded-2xl shadow-xl flex items-center justify-center text-3xl border border-cyan-300/40">
-                <i class="fa-solid fa-gamepad animate-bounce"></i>
+            <div class="w-16 h-16 mx-auto bg-gradient-to-br from-[#F8F6F3] via-[#E8EEF4] to-[#D4DEE9] text-[#B8956C] rounded-full flex items-center justify-center text-3xl border border-[#D4BC94]/60 moon-float">
+                <i class="fa-solid fa-moon"></i>
             </div>
 
-            <div class="space-y-1">
-                <span class="text-[11px] font-bold text-cyan-400 font-game uppercase tracking-widest">CHARACTER SELECT</span>
-                <h2 class="text-2xl font-black text-white font-game">
+            <div class="space-y-1.5">
+                <span class="text-[11px] font-medium text-[#B8956C] font-game tracking-[0.2em]">好き嫌い占い</span>
+                <h2 class="text-2xl sm:text-3xl font-semibold text-[#2A3644] font-game">
                     さがせ！時間泥棒
                 </h2>
-                <p class="text-xs text-slate-400">
-                    匿名で安心回答。業務の好き嫌いを診断！
+                <p class="text-xs text-[#8A97A5] leading-relaxed">
+                    匿名で安心。業務への気持ちを読み解く診断です
                 </p>
             </div>
 
             <div class="space-y-2 text-left">
-                <label for="input-init-nickname" class="text-xs font-bold text-slate-300 tracking-wider block font-game">
+                <label for="input-init-nickname" class="text-xs font-bold text-[#5C6B7A] tracking-wider block font-game">
                     ニックネーム
                 </label>
                 <div class="relative">
-                    <input type="text" id="input-init-nickname" placeholder="例: 匿名事務官A" class="w-full bg-slate-950 border-2 border-indigo-500/60 rounded-xl px-3.5 py-2.5 text-sm font-bold text-cyan-300 focus:border-cyan-400 focus:outline-none transition">
+                    <input type="text" id="input-init-nickname" placeholder="例: 匿名事務官A" class="w-full oracle-input rounded-xl px-3.5 py-2.5 text-sm font-bold transition">
                 </div>
             </div>
 
-            <button onclick="startSurveyWithCountdown()" class="w-full py-3.5 rounded-xl text-sm font-black bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-indigo-600/40 active:scale-98 transition flex items-center justify-center space-x-2 font-game">
-                <span>PRESS START!</span>
-                <i class="fa-solid fa-play text-xs"></i>
+            <button onclick="startSurveyWithCountdown()" class="w-full py-3.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#C9A962] to-[#B8956C] hover:brightness-105 text-white transition flex items-center justify-center space-x-2 font-game">
+                <span>診断をはじめる</span>
+                <i class="fa-solid fa-sparkles text-xs"></i>
             </button>
 
-            <p class="text-[11px] text-slate-500">開始時に名前を入力して回答します（1人ずつ・人数制限なし）</p>
+            <p class="text-[11px] text-[#8A97A5]">ニックネームを入れて、一人ずつ回答できます</p>
         </div>
     </div>
 
     <!-- OVERLAY 2: COUNTDOWN SCREEN -->
-    <div id="modal-countdown" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-countdown" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="text-center space-y-3">
-            <div id="countdown-text" class="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-amber-300 count-zoom-anim font-game">
+            <div id="countdown-text" class="text-8xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#B8956C] via-[#8FA3B5] to-[#D4BC94] count-zoom-anim font-game">
                 3
             </div>
-            <div id="countdown-subtext" class="text-cyan-300 font-bold text-sm tracking-widest uppercase font-game">
-                GET READY FOR QUEST...
+            <div id="countdown-subtext" class="text-[#B8956C] font-bold text-sm tracking-widest uppercase font-game">
+                まもなくはじまります
             </div>
         </div>
     </div>
 
     <!-- OVERLAY 2.5: THANKS & CLEAR CELEBRATION SCREEN -->
-    <div id="modal-thanks" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div id="modal-thanks" class="fixed inset-0 bg-[#2A3644]/40 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="text-center space-y-5 max-w-md animate-modal my-auto">
-            <div class="w-24 h-24 mx-auto bg-gradient-to-tr from-amber-400 via-pink-500 to-indigo-500 text-white rounded-3xl shadow-2xl shadow-pink-500/50 flex items-center justify-center text-5xl border-2 border-cyan-300/60 animate-bounce">
-                <i class="fa-solid fa-trophy"></i>
+            <div class="w-24 h-24 mx-auto bg-gradient-to-br from-[#F8F6F3] to-[#D4DEE9] text-[#B8956C] rounded-full flex items-center justify-center text-5xl border border-[#D4BC94]/60 moon-float">
+                <i class="fa-solid fa-star"></i>
             </div>
             <div class="space-y-2">
-                <span class="text-xs font-bold text-cyan-300 tracking-widest font-game uppercase">🎉 QUEST COMPLETED!</span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white font-game bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-pink-400 to-amber-300">
+                <span class="text-xs font-bold text-[#B8956C] tracking-widest font-game uppercase">診断完了</span>
+                <h2 class="text-3xl sm:text-4xl font-semibold text-[#2A3644] font-game bg-clip-text text-transparent bg-gradient-to-r from-[#B8956C] via-[#8FA3B5] to-[#D4BC94]">
                     お疲れ様でした！
                 </h2>
-                <p class="text-slate-300 text-sm font-bold leading-relaxed">
-                    全50項目の調査がすべて完了しました✨<br>時間泥棒の捜査・分析が完了しました！
+                <p class="text-[#5C6B7A] text-sm font-bold leading-relaxed">
+                    全50項目の回答がそろいました。<br>あなたの傾向を読み解けます。
                 </p>
             </div>
             <div class="pt-2 space-y-2">
-                <div id="thanks-sync-status" class="inline-flex items-center space-x-2 bg-indigo-950/90 border border-indigo-500/60 text-cyan-300 px-5 py-2.5 rounded-2xl text-xs font-bold font-game shadow-lg">
+                <div id="thanks-sync-status" class="inline-flex items-center space-x-2 bg-[#F4F6F9] border border-[#D4BC94]/50 text-[#B8956C] px-5 py-2.5 rounded-2xl text-xs font-bold font-game shadow-lg">
                     <i class="fa-solid fa-spinner animate-spin"></i>
                     <span>スプレッドシートへ記録中...</span>
                 </div>
@@ -849,40 +893,40 @@
     </div>
 
     <!-- MODAL 3: PERSONALITY DIAGNOSIS RESULT -->
-    <div id="modal-diagnosis" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
-        <div class="game-panel game-panel-glow max-w-xl w-full p-6 relative animate-modal my-auto border-2 border-indigo-500/60">
+    <div id="modal-diagnosis" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="game-panel game-panel-glow max-w-xl w-full p-6 relative animate-modal my-auto border-2 border-[#D4BC94]/50">
             
-            <button onclick="closeDiagnosisModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
+            <button onclick="closeDiagnosisModal()" class="absolute top-4 right-4 text-[#8A97A5] hover:text-[#2A3644] p-1.5 rounded-full bg-[#EEF2F6] transition">
                 <i class="fa-solid fa-xmark text-base"></i>
             </button>
 
             <div class="text-center space-y-1.5 mb-5">
-                <span class="inline-block px-3 py-1 bg-indigo-950 border border-indigo-500/50 rounded-full text-cyan-300 text-xs font-bold font-game">
-                    🎉 QUEST CLEAR! 50 TASKS COMPLETED
+                <span class="inline-block px-3 py-1 bg-[#F4F6F9] border border-[#D4BC94]/45 rounded-full text-[#B8956C] text-xs font-bold font-game">
+                    50問完了 · 診断結果
                 </span>
-                <h2 class="text-xl sm:text-2xl font-black text-white">
-                    時間泥棒の捜査完了！
+                <h2 class="text-xl sm:text-2xl font-black text-[#2A3644]">
+                    あなたの診断結果
                 </h2>
-                <p class="text-xs text-slate-400">
-                    あなたの回答データから判定された8タイプジョブ診断結果
+                <p class="text-xs text-[#8A97A5]">
+                    回答から導かれた、8タイプのうちのあなた
                 </p>
             </div>
 
-            <div id="diagnosis-card-content" class="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div id="diagnosis-card-content" class="bg-white/60 border border-[#D4DEE9] rounded-2xl p-5 space-y-4">
                 <!-- Dynamically populated -->
             </div>
 
             <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <button onclick="openCharacterCatalogModal()" class="w-full sm:w-auto text-xs font-bold text-cyan-300 hover:text-white bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-1.5">
+                <button onclick="openCharacterCatalogModal()" class="w-full sm:w-auto text-xs font-bold text-[#B8956C] hover:text-[#2A3644] bg-[#F4F6F9] hover:bg-[#E8EEF4] border border-[#D4BC94]/45 px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-1.5">
                     <i class="fa-solid fa-users"></i>
                     <span>8タイプ図鑑を見る</span>
                 </button>
 
                 <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <button onclick="switchTab('ranking'); closeDiagnosisModal();" class="flex-grow sm:flex-grow-0 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl shadow-md transition">
+                    <button onclick="switchTab('ranking'); closeDiagnosisModal();" class="flex-grow sm:flex-grow-0 text-xs font-bold bg-[#B8956C] hover:bg-[#A8845C] text-white px-4 py-2.5 rounded-xl shadow-md transition">
                         集計・分析を見る
                     </button>
-                    <button onclick="closeDiagnosisModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl transition border border-slate-800">
+                    <button onclick="closeDiagnosisModal()" class="text-xs font-bold bg-[#EEF2F6] hover:bg-[#E4EAF1] text-[#5C6B7A] px-4 py-2.5 rounded-xl transition border border-[#D4DEE9]">
                         閉じる
                     </button>
                 </div>
@@ -892,17 +936,17 @@
     </div>
 
     <!-- MODAL 4: 8 CHARACTER CATALOG MODAL -->
-    <div id="modal-catalog" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
-        <div class="game-panel max-w-3xl w-full p-6 relative animate-modal my-auto max-h-[85vh] flex flex-col border border-indigo-500/40">
+    <div id="modal-catalog" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="game-panel max-w-3xl w-full p-6 relative animate-modal my-auto max-h-[85vh] flex flex-col border border-[#D4BC94]/40">
             
             <div class="flex items-center justify-between mb-4 shrink-0">
                 <div>
-                    <h2 class="text-base font-extrabold text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-id-card text-cyan-400"></i>
-                        <span>学校事務 8タイプ性格診断図鑑</span>
+                    <h2 class="text-base font-extrabold text-[#2A3644] flex items-center space-x-2">
+                        <i class="fa-solid fa-id-card text-[#B8956C]"></i>
+                        <span>8タイプ診断図鑑</span>
                     </h2>
                 </div>
-                <button onclick="closeCatalogModal()" class="text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
+                <button onclick="closeCatalogModal()" class="text-[#8A97A5] hover:text-[#2A3644] p-1.5 rounded-full bg-[#EEF2F6] transition">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
@@ -911,8 +955,8 @@
                 <!-- Dynamically generated -->
             </div>
 
-            <div class="mt-4 text-center shrink-0 pt-2 border-t border-slate-800">
-                <button onclick="closeCatalogModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-5 py-2 rounded-xl transition border border-slate-800">
+            <div class="mt-4 text-center shrink-0 pt-2 border-t border-[#D4DEE9]">
+                <button onclick="closeCatalogModal()" class="text-xs font-bold bg-[#EEF2F6] hover:bg-[#E4EAF1] text-[#5C6B7A] px-5 py-2 rounded-xl transition border border-[#D4DEE9]">
                     閉じる
                 </button>
             </div>
@@ -920,58 +964,58 @@
     </div>
 
     <!-- MODAL 5: ADMIN MENU - EDIT 50 TASKS -->
-    <div id="modal-admin" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
-        <div class="game-panel max-w-2xl w-full p-6 relative animate-modal my-auto max-h-[85vh] flex flex-col border border-indigo-500/40">
+    <div id="modal-admin" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="game-panel max-w-2xl w-full p-6 relative animate-modal my-auto max-h-[85vh] flex flex-col border border-[#D4BC94]/40">
             
             <div class="flex items-center justify-between mb-4 shrink-0">
                 <div class="flex items-center space-x-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-indigo-950 text-cyan-400 flex items-center justify-center font-bold border border-indigo-800">
+                    <div class="w-8 h-8 rounded-xl bg-[#F4F6F9] text-[#B8956C] flex items-center justify-center font-bold border border-[#D4BC94]/40">
                         <i class="fa-solid fa-sliders"></i>
                     </div>
                     <div>
-                        <h2 class="text-base font-extrabold text-white">設定</h2>
-                        <p class="text-xs text-slate-400">スプレッドシート連携・業務項目のカスタマイズ</p>
+                        <h2 class="text-base font-extrabold text-[#2A3644]">設定</h2>
+                        <p class="text-xs text-[#8A97A5]">スプレッドシート連携・業務項目のカスタマイズ</p>
                     </div>
                 </div>
-                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
+                <button onclick="closeAdminModal()" class="text-[#8A97A5] hover:text-[#2A3644] p-1.5 rounded-full bg-[#EEF2F6] transition">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
 
             <!-- Google Sheets sync settings -->
-            <div class="shrink-0 mb-4 p-4 rounded-xl bg-slate-950/80 border border-emerald-800/60 space-y-3">
+            <div class="shrink-0 mb-4 p-4 rounded-xl bg-white/70 border border-[#7D9B8A]/35 space-y-3">
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <h3 class="text-sm font-extrabold text-emerald-300 flex items-center space-x-2">
+                        <h3 class="text-sm font-extrabold text-[#7D9B8A] flex items-center space-x-2">
                             <i class="fa-brands fa-google-drive"></i>
                             <span>Googleスプレッドシート連携</span>
                         </h3>
-                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                        <p class="text-[11px] text-[#8A97A5] mt-1 leading-relaxed">
                             Apps Script のウェブアプリURL（末尾 /exec）を保存すると、回答をDrive上のシートへ送れます。
                         </p>
                     </div>
-                    <a href="https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit" target="_blank" rel="noopener" class="shrink-0 text-[11px] font-bold text-cyan-300 hover:text-white border border-slate-700 px-2.5 py-1.5 rounded-lg">
+                    <a href="https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit" target="_blank" rel="noopener" class="shrink-0 text-[11px] font-bold text-[#B8956C] hover:text-[#2A3644] border border-[#D4BC94]/45 px-2.5 py-1.5 rounded-lg">
                         シートを開く
                     </a>
                 </div>
-                <input type="url" id="input-sheets-webapp-url" placeholder="https://script.google.com/macros/s/xxxxx/exec" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-cyan-200 focus:ring-1 focus:ring-emerald-400 focus:outline-none">
+                <input type="url" id="input-sheets-webapp-url" placeholder="https://script.google.com/macros/s/xxxxx/exec" class="w-full bg-[#EEF2F6] border border-[#D4BC94]/45 rounded-lg px-3 py-2 text-xs font-mono text-[#8FA3B5] focus:ring-1 focus:ring-[#B8956C] focus:outline-none">
                 <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="saveGoogleSheetsUrl()" class="text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl transition">
+                    <button onclick="saveGoogleSheetsUrl()" class="text-xs font-bold bg-[#7D9B8A] hover:bg-[#6C8A79] text-white px-3 py-2 rounded-xl transition">
                         URLを保存
                     </button>
-                    <button onclick="syncAllToGoogleSheets()" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl transition">
+                    <button onclick="syncAllToGoogleSheets()" class="text-xs font-bold bg-[#B8956C] hover:bg-[#A8845C] text-white px-3 py-2 rounded-xl transition">
                         全員分をSheetsへ送信
                     </button>
-                    <button onclick="testGoogleSheetsConnection()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3 py-2 rounded-xl transition">
+                    <button onclick="testGoogleSheetsConnection()" class="text-xs font-bold bg-[#EEF2F6] hover:bg-[#E4EAF1] text-[#5C6B7A] border border-[#D4BC94]/45 px-3 py-2 rounded-xl transition">
                         接続テスト
                     </button>
                 </div>
-                <p id="sheets-sync-status" class="text-[11px] text-slate-500">未設定</p>
-                <details class="text-[11px] text-slate-400">
-                    <summary class="cursor-pointer text-slate-300 font-bold">初回セットアップ手順（約5分）</summary>
+                <p id="sheets-sync-status" class="text-[11px] text-[#8A97A5]">未設定</p>
+                <details class="text-[11px] text-[#8A97A5]">
+                    <summary class="cursor-pointer text-[#5C6B7A] font-bold">初回セットアップ手順（約5分）</summary>
                     <ol class="list-decimal list-inside mt-2 space-y-1 leading-relaxed">
                         <li>上の「シートを開く」→「拡張機能」→「Apps Script」</li>
-                        <li>リポジトリの <code class="text-cyan-300">google-apps-script/Code.gs</code> を全文貼り付けて保存</li>
+                        <li>リポジトリの <code class="text-[#B8956C]">google-apps-script/Code.gs</code> を全文貼り付けて保存</li>
                         <li>「デプロイ」→「新しいデプロイ」→種類「ウェブアプリ」</li>
                         <li>実行: 自分　／　アクセス: 全員（または組織内）→ デプロイ</li>
                         <li>表示されたURLを上欄に貼って「URLを保存」</li>
@@ -979,21 +1023,21 @@
                 </details>
             </div>
 
-            <p class="text-xs font-bold text-slate-400 mb-2 shrink-0">業務項目（50）</p>
+            <p class="text-xs font-bold text-[#8A97A5] mb-2 shrink-0">業務項目（50）</p>
             <div id="admin-tasks-editor" class="space-y-2.5 overflow-y-auto custom-scrollbar pr-1 flex-grow">
                 <!-- Task rows dynamically rendered -->
             </div>
 
-            <div class="mt-4 shrink-0 pt-3 border-t border-slate-800 flex items-center justify-between">
-                <button onclick="resetTasksToDefault()" class="text-xs font-bold text-rose-400 hover:bg-rose-950/50 px-3 py-2 rounded-xl border border-rose-800 transition">
+            <div class="mt-4 shrink-0 pt-3 border-t border-[#D4DEE9] flex items-center justify-between">
+                <button onclick="resetTasksToDefault()" class="text-xs font-bold text-[#C4878E] hover:bg-[#F6ECEE]/50 px-3 py-2 rounded-xl border border-[#C4878E]/40 transition">
                     初期状態に戻す
                 </button>
 
                 <div class="flex items-center space-x-2">
-                    <button onclick="closeAdminModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-4 py-2 rounded-xl border border-slate-800 transition">
+                    <button onclick="closeAdminModal()" class="text-xs font-bold bg-[#EEF2F6] hover:bg-[#E4EAF1] text-[#5C6B7A] px-4 py-2 rounded-xl border border-[#D4DEE9] transition">
                         キャンセル
                     </button>
-                    <button onclick="saveAdminTasks()" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl shadow-md transition">
+                    <button onclick="saveAdminTasks()" class="text-xs font-bold bg-[#B8956C] hover:bg-[#A8845C] text-white px-4 py-2 rounded-xl shadow-md transition">
                         保存する
                     </button>
                 </div>
@@ -1003,8 +1047,8 @@
     </div>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-800/80 py-3 text-center text-xs text-slate-500 mt-auto bg-[#070A12]">
-        さがせ！時間泥棒 &copy; 学校事務 業務診断ナビ QUEST
+    <footer class="border-t border-[#D4BC94]/30 py-4 text-center text-xs text-[#8A97A5] mt-auto bg-[#F8F6F3]/50">
+        さがせ！時間泥棒 · 学校事務の好き嫌い占い
     </footer>
 
     <!-- 1枚PDF用レポート（画面では非表示・印刷時のみ） -->
@@ -1042,14 +1086,14 @@
                 case 'financial_guardian':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#1e1b4b" stroke="#f59e0b" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#EDE6DA" stroke="#B8956C" stroke-width="2.5"/>
                         <circle cx="50" cy="42" r="22" fill="#fff"/>
                         <path d="M 32 28 L 50 14 L 68 28 L 60 32 L 50 24 L 40 32 Z" fill="#f59e0b"/>
                         <circle cx="42" cy="40" r="5" fill="none" stroke="#78350f" stroke-width="2"/>
                         <circle cx="58" cy="40" r="5" fill="none" stroke="#78350f" stroke-width="2"/>
                         <line x1="47" y1="40" x2="53" y2="40" stroke="#78350f" stroke-width="2"/>
                         <path d="M 44 50 Q 50 55 56 50" fill="none" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M 25 82 C 25 65 35 60 50 60 C 65 60 75 65 75 82 Z" fill="#b45309"/>
+                        <path d="M 25 82 C 25 65 35 60 50 60 C 65 60 75 65 75 82 Z" fill="#B8956C"/>
                         <circle cx="50" cy="72" r="7" fill="#fbbf24"/>
                         <text x="50" y="75.5" font-size="9" font-weight="bold" text-anchor="middle" fill="#78350f">¥</text>
                     </svg>`;
@@ -1057,82 +1101,82 @@
                 case 'benevolent_mother':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#831843" stroke="#f43f5e" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#F3E4E7" stroke="#C4878E" stroke-width="2.5"/>
                         <path d="M 28 45 C 28 20 72 20 72 45 C 72 55 68 60 68 60 L 32 60 C 32 60 28 55 28 45 Z" fill="#fbcfe8"/>
                         <circle cx="50" cy="44" r="20" fill="#fff"/>
                         <path d="M 40 42 Q 44 38 48 42" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round"/>
                         <path d="M 52 42 Q 56 38 60 42" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round"/>
                         <path d="M 44 52 Q 50 57 56 52" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M 25 85 C 25 68 35 63 50 63 C 65 63 75 68 75 85 Z" fill="#f43f5e"/>
+                        <path d="M 25 85 C 25 68 35 63 50 63 C 65 63 75 68 75 85 Z" fill="#C4878E"/>
                     </svg>`;
 
                 case 'labor_strategist':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#1e293b" stroke="#6366f1" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#E4EAF1" stroke="#8FA3B5" stroke-width="2.5"/>
                         <circle cx="50" cy="42" r="21" fill="#fff"/>
-                        <path d="M 28 35 C 35 20 65 20 72 35 C 72 35 60 28 50 28 C 40 28 28 35 28 35 Z" fill="#4338ca"/>
+                        <path d="M 28 35 C 35 20 65 20 72 35 C 72 35 60 28 50 28 C 40 28 28 35 28 35 Z" fill="#8FA3B5"/>
                         <line x1="39" y1="42" x2="47" y2="42" stroke="#1e1b4b" stroke-width="2.5"/>
                         <line x1="53" y1="42" x2="61" y2="42" stroke="#1e1b4b" stroke-width="2.5"/>
                         <path d="M 46 52 Q 52 54 56 50" fill="none" stroke="#1e1b4b" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#4338ca"/>
+                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#8FA3B5"/>
                     </svg>`;
 
                 case 'castle_repairer':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#292524" stroke="#f97316" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#F0E8E0" stroke="#A88B74" stroke-width="2.5"/>
                         <circle cx="50" cy="45" r="20" fill="#fff"/>
-                        <path d="M 28 38 C 28 22 72 22 72 38 Z" fill="#f97316"/>
-                        <rect x="24" y="36" width="52" height="5" rx="2" fill="#ea580c"/>
+                        <path d="M 28 38 C 28 22 72 22 72 38 Z" fill="#A88B74"/>
+                        <rect x="24" y="36" width="52" height="5" rx="2" fill="#A88B74"/>
                         <circle cx="41" cy="44" r="2.5" fill="#7c2d12"/>
                         <path d="M 42 52 Q 50 59 58 52 Z" fill="#7c2d12"/>
-                        <path d="M 25 85 C 25 68 35 64 50 64 C 65 64 75 68 75 85 Z" fill="#ea580c"/>
+                        <path d="M 25 85 C 25 68 35 64 50 64 C 65 64 75 68 75 85 Z" fill="#A88B74"/>
                     </svg>`;
 
                 case 'registry_master':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#E4EEE8" stroke="#7D9B8A" stroke-width="2.5"/>
                         <circle cx="50" cy="42" r="20" fill="#fff"/>
-                        <polygon points="50,16 78,28 50,40 22,28" fill="#047857"/>
+                        <polygon points="50,16 78,28 50,40 22,28" fill="#7D9B8A"/>
                         <circle cx="42" cy="44" r="2" fill="#064e3b"/>
                         <circle cx="58" cy="44" r="2" fill="#064e3b"/>
                         <line x1="45" y1="52" x2="55" y2="52" stroke="#064e3b" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#047857"/>
+                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#7D9B8A"/>
                     </svg>`;
 
                 case 'frontline_shield':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#083344" stroke="#0284c7" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#E4EAF1" stroke="#8FA3B5" stroke-width="2.5"/>
                         <circle cx="50" cy="42" r="20" fill="#fff"/>
                         <circle cx="42" cy="42" r="2.5" fill="#0369a1"/>
                         <circle cx="58" cy="42" r="2.5" fill="#0369a1"/>
-                        <path d="M 42 50 Q 50 57 58 50 Z" fill="#0284c7"/>
-                        <path d="M 25 85 C 25 68 35 63 50 63 C 65 63 75 68 75 85 Z" fill="#0284c7"/>
+                        <path d="M 42 50 Q 50 57 58 50 Z" fill="#8FA3B5"/>
+                        <path d="M 25 85 C 25 68 35 63 50 63 C 65 63 75 68 75 85 Z" fill="#8FA3B5"/>
                     </svg>`;
 
                 case 'invincible_allrounder':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#3b0764" stroke="#a855f7" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#EEE8EC" stroke="#9A8A96" stroke-width="2.5"/>
                         <circle cx="50" cy="42" r="21" fill="#fff"/>
                         <polygon points="32,28 38,16 50,24 62,16 68,28" fill="#eab308"/>
                         <path d="M 43 51 Q 50 56 57 51" fill="none" stroke="#581c87" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M 22 85 C 22 65 35 60 50 60 C 65 60 78 65 78 85 Z" fill="#9333ea"/>
+                        <path d="M 22 85 C 22 65 35 60 50 60 C 65 60 78 65 78 85 Z" fill="#9A8A96"/>
                     </svg>`;
 
                 case 'maverick_reformer':
                     return `
                     <svg viewBox="0 0 100 100" class="w-full h-full">
-                        <circle cx="50" cy="50" r="45" fill="#4c0519" stroke="#f43f5e" stroke-width="2.5"/>
+                        <circle cx="50" cy="50" r="45" fill="#F3E4E7" stroke="#C4878E" stroke-width="2.5"/>
                         <circle cx="50" cy="42" r="20" fill="#fff"/>
                         <rect x="36" y="38" width="12" height="8" rx="2" fill="#881337"/>
                         <rect x="52" y="38" width="12" height="8" rx="2" fill="#881337"/>
                         <line x1="48" y1="42" x2="52" y2="42" stroke="#881337" stroke-width="2"/>
                         <path d="M 44 52 Q 52 56 56 49" fill="none" stroke="#881337" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#e11d48"/>
+                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#C4878E"/>
                     </svg>`;
 
                 default:
@@ -1362,15 +1406,15 @@
             if (!el) return;
             if (extraMessage) {
                 el.textContent = extraMessage;
-                el.className = "text-[11px] text-cyan-300";
+                el.className = "text-[11px] text-[#B8956C]";
                 return;
             }
             if (googleSheetsWebAppUrl) {
                 el.textContent = "連携中: URL設定済み → 完了時の自動送信 / 「Sheetsへ送信」が使えます";
-                el.className = "text-[11px] text-emerald-400";
+                el.className = "text-[11px] text-[#7D9B8A]";
             } else {
                 el.textContent = "未設定（初回は下の手順で Apps Script をデプロイし、URLを保存してください）";
-                el.className = "text-[11px] text-slate-500";
+                el.className = "text-[11px] text-[#8A97A5]";
             }
         }
 
@@ -1434,7 +1478,7 @@
 
             let step = 3;
             countEl.textContent = step;
-            subEl.textContent = "GET READY FOR QUEST...";
+            subEl.textContent = "まもなくはじまります";
             playSound('count');
 
             const interval = setInterval(() => {
@@ -1473,14 +1517,14 @@
             const listContainer = document.getElementById('survey-list-container');
 
             if (mode === 'deck') {
-                deckBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
-                listBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                deckBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
+                listBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
                 deckContainer.classList.remove('hidden');
                 listContainer.classList.add('hidden');
                 renderDeckCard();
             } else {
-                listBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
-                deckBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                listBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
+                deckBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
                 listContainer.classList.remove('hidden');
                 deckContainer.classList.add('hidden');
                 renderTaskList();
@@ -1497,7 +1541,7 @@
             void card.offsetWidth;
             card.classList.add('card-enter');
 
-            document.getElementById('card-no').textContent = `STAGE Q. ${currentDeckIndex + 1} / 50`;
+            document.getElementById('card-no').textContent = `問い ${currentDeckIndex + 1} / 50`;
             document.getElementById('card-task-name').textContent = task.name;
             document.getElementById('card-task-desc').textContent = task.desc;
 
@@ -1507,25 +1551,25 @@
             const badge = document.getElementById('card-status-badge');
 
             if (currentChoice === 'love') {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-pink-950 text-pink-300 border border-pink-700";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#F6ECEE] text-[#C4878E] border border-[#C4878E]/40";
                 badge.textContent = "回答済: 大好き";
             } else if (currentChoice === 'like') {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-700";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#E8F0EC] text-[#7D9B8A] border border-[#7D9B8A]/40";
                 badge.textContent = "回答済: 好き";
             } else if (currentChoice === 'neutral') {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-blue-950 text-blue-300 border border-blue-700";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#E8EEF4] text-[#8FA3B5] border border-[#8FA3B5]/40";
                 badge.textContent = "回答済: 普通";
             } else if (currentChoice === 'dislike') {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-orange-950 text-orange-300 border border-orange-700";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#F4EEE8] text-[#A88B74] border border-[#A88B74]/40";
                 badge.textContent = "回答済: 嫌い";
             } else if (currentChoice === 'hate') {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-rose-950 text-rose-300 border border-rose-700";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#F6ECEE] text-[#C4878E] border border-[#C4878E]/50";
                 badge.textContent = "回答済: 大嫌い";
             } else if (currentChoice === 'unassigned') {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-slate-900 text-slate-400 border border-slate-700";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#EEF2F6] text-[#8A97A5] border border-[#D4BC94]/45";
                 badge.textContent = "回答済: 担当外";
             } else {
-                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-slate-950 text-slate-500 border border-slate-800";
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-[#F4F6F9] text-[#8A97A5] border border-[#D4DEE9]";
                 badge.textContent = "未選択";
             }
         }
@@ -1594,13 +1638,13 @@
             const result = await syncUserToGoogleSheets(currentNickname, { silent: true });
             if (syncStatus) {
                 if (result && result.ok) {
-                    syncStatus.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-300"></i><span>スプレッドシートへ記録しました</span>';
+                    syncStatus.innerHTML = '<i class="fa-solid fa-circle-check text-[#7D9B8A]"></i><span>スプレッドシートへ記録しました</span>';
                     cloudResponses = null;
                     cloudLoadStatus = 'idle';
                 } else if (result && result.skipped) {
-                    syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-300"></i><span>送信先URL未設定のため未記録</span>';
+                    syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-[#B8956C]"></i><span>送信先URL未設定のため未記録</span>';
                 } else {
-                    syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-300"></i><span>記録に失敗しました（再送は設定から）</span>';
+                    syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-[#C4878E]"></i><span>記録に失敗しました（再送は設定から）</span>';
                 }
             }
 
@@ -1762,36 +1806,36 @@
 
             container.innerHTML = `
                 <div class="flex flex-col sm:flex-row items-center gap-5">
-                    <div class="w-28 h-28 shrink-0 bg-slate-950 p-2 rounded-2xl border-2 ${character.border} shadow-lg relative">
+                    <div class="w-28 h-28 shrink-0 bg-[#F4F6F9] p-2 rounded-2xl border-2 ${character.border} shadow-lg relative">
                         ${getCharacterSVG(character.id)}
                     </div>
 
                     <div class="space-y-1 text-center sm:text-left flex-grow">
-                        <span class="text-xs font-bold text-cyan-400 font-game uppercase tracking-wider">
-                            PLAYER: 「${currentNickname}」
+                        <span class="text-xs font-bold text-[#B8956C] font-game tracking-wider">
+                            ニックネーム: 「${currentNickname}」
                         </span>
-                        <h3 class="text-2xl font-black text-white">
+                        <h3 class="text-2xl font-black text-[#2A3644]">
                             ${character.name}
                         </h3>
-                        <p class="text-xs font-bold text-slate-300">
+                        <p class="text-xs font-bold text-[#5C6B7A]">
                             「${character.tagline}」
                         </p>
                     </div>
                 </div>
 
-                <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-3">
+                <div class="bg-[#EEF2F6]/80 p-4 rounded-xl border border-[#D4DEE9] text-xs sm:text-sm text-[#5C6B7A] leading-relaxed space-y-3">
                     <p>${character.desc}</p>
 
-                    <div class="pt-2 border-t border-slate-800">
-                        <div class="font-bold text-amber-300 text-xs mb-1">💡 学校事務の特徴:</div>
-                        <ul class="list-disc list-inside space-y-0.5 text-slate-300 text-xs">
+                    <div class="pt-2 border-t border-[#D4DEE9]">
+                        <div class="font-bold text-[#B8956C] text-xs mb-1">学校事務の特徴</div>
+                        <ul class="list-disc list-inside space-y-0.5 text-[#5C6B7A] text-xs">
                             ${character.traits.map(t => `<li>${t}</li>`).join('')}
                         </ul>
                     </div>
 
-                    <div class="flex items-center space-x-2 pt-1 text-xs text-indigo-300 font-bold">
+                    <div class="flex items-center space-x-2 pt-1 text-xs text-[#8FA3B5] font-bold">
                         <span>得意領域:</span>
-                        <span class="bg-indigo-950 px-2.5 py-0.5 rounded-lg border border-indigo-700 text-cyan-300">${character.matchTask}</span>
+                        <span class="bg-[#F4F6F9] px-2.5 py-0.5 rounded-lg border border-[#D4BC94]/45 text-[#B8956C]">${character.matchTask}</span>
                     </div>
                 </div>
             `;
@@ -1814,23 +1858,23 @@
 
                 card.innerHTML = `
                     <div class="flex items-start space-x-3">
-                        <div class="w-14 h-14 shrink-0 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <div class="w-14 h-14 shrink-0 bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9]">
                             ${getCharacterSVG(char.id)}
                         </div>
                         <div class="space-y-0.5">
-                            <h4 class="font-extrabold text-sm text-white">
+                            <h4 class="font-extrabold text-sm text-[#2A3644]">
                                 ${char.name}
                             </h4>
-                            <p class="text-[11px] font-bold text-cyan-300">${char.tagline}</p>
+                            <p class="text-[11px] font-bold text-[#B8956C]">${char.tagline}</p>
                         </div>
                     </div>
 
-                    <p class="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                    <p class="text-xs text-[#5C6B7A] leading-relaxed bg-white/50 p-2.5 rounded-xl border border-[#D4DEE9]">
                         ${char.desc}
                     </p>
 
-                    <div class="text-[11px] font-bold text-indigo-300">
-                        得意分野: <span class="text-slate-200 font-medium">${char.matchTask}</span>
+                    <div class="text-[11px] font-bold text-[#8FA3B5]">
+                        得意分野: <span class="text-[#5C6B7A] font-medium">${char.matchTask}</span>
                     </div>
                 `;
 
@@ -1850,23 +1894,23 @@
             document.getElementById('view-ranking').classList.add('hidden');
             document.getElementById('view-matrix').classList.add('hidden');
 
-            document.getElementById('nav-survey').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
-            document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
-            document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+            document.getElementById('nav-survey').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition flex items-center space-x-1.5";
+            document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition flex items-center space-x-1.5";
+            document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition flex items-center space-x-1.5";
 
             if (tab === 'survey') {
                 document.getElementById('view-survey').classList.remove('hidden');
-                document.getElementById('nav-survey').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                document.getElementById('nav-survey').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md  transition flex items-center space-x-1.5";
                 renderDeckCard();
             } else if (tab === 'ranking') {
                 document.getElementById('view-ranking').classList.remove('hidden');
-                document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md  transition flex items-center space-x-1.5";
                 updateCloudStatusUI('スプレッドシートから読込中...');
                 await loadCloudResponsesFromSheets();
                 renderRankingAndAnalysis();
             } else if (tab === 'matrix') {
                 document.getElementById('view-matrix').classList.remove('hidden');
-                document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md  transition flex items-center space-x-1.5";
                 await loadCloudResponsesFromSheets();
                 renderMatrix();
             }
@@ -1883,68 +1927,44 @@
                 const currentChoice = myAnswers[task.id] || null;
 
                 const card = document.createElement('div');
-                card.className = "game-panel p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-slate-700 transition";
+                card.className = "game-panel p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-[#D4BC94]/45 transition";
 
                 card.innerHTML = `
                     <div class="flex-grow space-y-0.5">
                         <div class="flex items-center space-x-2">
-                            <span class="bg-indigo-950 text-cyan-300 font-bold text-[11px] px-2 py-0.5 rounded border border-indigo-800 font-game">No.${task.id}</span>
-                            <h3 class="font-bold text-white text-sm">${task.name}</h3>
+                            <span class="bg-[#F4F6F9] text-[#B8956C] font-bold text-[11px] px-2 py-0.5 rounded border border-[#D4BC94]/40 font-game">No.${task.id}</span>
+                            <h3 class="font-bold text-[#2A3644] text-sm">${task.name}</h3>
                         </div>
-                        <p class="text-xs text-slate-400 pl-0.5">${task.desc}</p>
+                        <p class="text-xs text-[#8A97A5] pl-0.5">${task.desc}</p>
                     </div>
 
                     <div class="flex items-center space-x-1 shrink-0 flex-wrap gap-y-1">
-                        <button onclick="setAnswerList(${task.id}, 'love')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
-                            currentChoice === 'love' 
-                            ? 'bg-pink-600 text-white border-pink-400 shadow-md' 
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-pink-950 hover:text-pink-300'
-                        }">
+                        <button onclick="setAnswerList(${task.id}, 'love')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${ currentChoice === 'love' ? 'bg-[#C4878E] text-white border-[#C4878E] shadow-md' : 'bg-[#EEF2F6] text-[#8A97A5] border-[#D4DEE9] hover:bg-[#F6ECEE] hover:text-[#C4878E]' }">
                             <i class="fa-solid fa-heart text-xs"></i>
                             <span>大好き</span>
                         </button>
 
-                        <button onclick="setAnswerList(${task.id}, 'like')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
-                            currentChoice === 'like' 
-                            ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' 
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-emerald-950 hover:text-emerald-300'
-                        }">
+                        <button onclick="setAnswerList(${task.id}, 'like')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${ currentChoice === 'like' ? 'bg-[#7D9B8A] text-white border-[#7D9B8A] shadow-md' : 'bg-[#EEF2F6] text-[#8A97A5] border-[#D4DEE9] hover:bg-[#E8F0EC] hover:text-[#7D9B8A]' }">
                             <i class="fa-solid fa-thumbs-up text-xs"></i>
                             <span>好き</span>
                         </button>
 
-                        <button onclick="setAnswerList(${task.id}, 'neutral')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
-                            currentChoice === 'neutral' 
-                            ? 'bg-blue-600 text-white border-blue-400 shadow-md' 
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-blue-950 hover:text-blue-300'
-                        }">
+                        <button onclick="setAnswerList(${task.id}, 'neutral')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${ currentChoice === 'neutral' ? 'bg-[#8FA3B5] text-white border-[#8FA3B5] shadow-md' : 'bg-[#EEF2F6] text-[#8A97A5] border-[#D4DEE9] hover:bg-[#E8EEF4] hover:text-[#8FA3B5]' }">
                             <i class="fa-solid fa-face-meh text-xs"></i>
                             <span>普通</span>
                         </button>
 
-                        <button onclick="setAnswerList(${task.id}, 'dislike')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
-                            currentChoice === 'dislike' 
-                            ? 'bg-orange-600 text-white border-orange-500 shadow-md' 
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-orange-950 hover:text-orange-300'
-                        }">
+                        <button onclick="setAnswerList(${task.id}, 'dislike')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${ currentChoice === 'dislike' ? 'bg-[#A88B74] text-white border-[#A88B74] shadow-md' : 'bg-[#EEF2F6] text-[#8A97A5] border-[#D4DEE9] hover:bg-[#F4EEE8] hover:text-[#A88B74]' }">
                             <i class="fa-solid fa-thumbs-down text-xs"></i>
                             <span>嫌い</span>
                         </button>
 
-                        <button onclick="setAnswerList(${task.id}, 'hate')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
-                            currentChoice === 'hate' 
-                            ? 'bg-rose-600 text-white border-rose-500 shadow-md' 
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-rose-950 hover:text-rose-300'
-                        }">
-                            <i class="fa-solid fa-skull text-xs"></i>
+                        <button onclick="setAnswerList(${task.id}, 'hate')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${ currentChoice === 'hate' ? 'bg-[#96656D] text-white border-[#96656D] shadow-md' : 'bg-[#EEF2F6] text-[#8A97A5] border-[#D4DEE9] hover:bg-[#F6ECEE] hover:text-[#C4878E]' }">
+                            <i class="fa-solid fa-cloud-moon text-xs"></i>
                             <span>大嫌い</span>
                         </button>
 
-                        <button onclick="setAnswerList(${task.id}, 'unassigned')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
-                            currentChoice === 'unassigned' 
-                            ? 'bg-slate-600 text-white border-slate-400 shadow-md' 
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
-                        }">
+                        <button onclick="setAnswerList(${task.id}, 'unassigned')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${ currentChoice === 'unassigned' ? 'bg-[#98A3B0] text-white border-[#8A97A5] shadow-md' : 'bg-[#EEF2F6] text-[#8A97A5] border-[#D4DEE9] hover:bg-[#E4EAF1] hover:text-[#5C6B7A]' }">
                             <i class="fa-solid fa-ban text-xs"></i>
                             <span>担当外</span>
                         </button>
@@ -2022,13 +2042,13 @@
             const analysisPanel = document.getElementById('panel-analysis');
 
             if (panel === 'rank') {
-                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
-                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
+                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
                 rankPanel.classList.remove('hidden');
                 analysisPanel.classList.add('hidden');
             } else {
-                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
-                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
+                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
                 analysisPanel.classList.remove('hidden');
                 rankPanel.classList.add('hidden');
                 renderAnalysis();
@@ -2047,19 +2067,19 @@
             const dislikeBtn = document.getElementById('sort-dislike');
             const likeBtn = document.getElementById('sort-like');
             if (currentSortMode === 'dislike') {
-                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white";
-                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
+                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-[#C4878E] text-white";
+                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-[#8A97A5] hover:text-[#2A3644]";
             } else {
-                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white";
-                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
+                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-[#7D9B8A] text-white";
+                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-[#8A97A5] hover:text-[#2A3644]";
             }
             const helper = document.getElementById('rank-helper-text');
             if (helper) {
                 if (currentSortMode === 'dislike') {
-                    helper.className = "text-xs text-rose-300/90 px-1 font-bold";
+                    helper.className = "text-xs text-[#C4878E]/90 px-1 font-bold";
                     helper.textContent = "いま表示中: 嫌いが多い業務順（大嫌いも嫌いに合算）";
                 } else {
-                    helper.className = "text-xs text-emerald-300/90 px-1 font-bold";
+                    helper.className = "text-xs text-[#7D9B8A]/90 px-1 font-bold";
                     helper.textContent = "いま表示中: 好きが多い業務順（大好きも好きに合算）";
                 }
             }
@@ -2198,7 +2218,7 @@
             if (activeRateEl) activeRateEl.textContent = `${avgActivePct} %`;
 
             if (totalRespondents === 0) {
-                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">まだスプレッドシートに回答がありません。調査を最後まで完了すると集計されます。</div>`;
+                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-[#8A97A5]">まだスプレッドシートに回答がありません。調査を最後まで完了すると集計されます。</div>`;
                 return;
             }
 
@@ -2214,7 +2234,7 @@
                 const msg = currentSortMode === 'like'
                     ? "「好き」の回答がまだありません。"
                     : "「嫌い」の回答がまだありません。";
-                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">${msg}</div>`;
+                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-[#8A97A5]">${msg}</div>`;
                 return;
             }
 
@@ -2232,11 +2252,11 @@
                 const dislikeVotes = item.totalDislikeCount; // hate + dislike
                 const primary = isLikeMode ? likeVotes : dislikeVotes;
                 const barPct = Math.round((primary / maxVal) * 100);
-                const barColor = isLikeMode ? 'bg-emerald-500' : 'bg-rose-500';
+                const barColor = isLikeMode ? 'bg-[#7D9B8A]' : 'bg-[#C4878E]';
 
-                let rankClass = "text-slate-500";
-                if (index === 0) rankClass = isLikeMode ? "text-emerald-300" : "text-rose-300";
-                else if (index === 1) rankClass = "text-slate-300";
+                let rankClass = "text-[#8A97A5]";
+                if (index === 0) rankClass = isLikeMode ? "text-[#7D9B8A]" : "text-[#C4878E]";
+                else if (index === 1) rankClass = "text-[#5C6B7A]";
                 else if (index === 2) rankClass = "text-amber-600";
 
                 const mainLabel = isLikeMode ? '好き' : '嫌い';
@@ -2245,20 +2265,20 @@
                     : `好き ${likeVotes}`;
 
                 const row = document.createElement('div');
-                row.className = "px-4 py-3 flex items-center gap-3 hover:bg-slate-900/50 transition";
+                row.className = "px-4 py-3 flex items-center gap-3 hover:bg-[#EEF2F6]/70 transition";
                 row.innerHTML = `
                     <div class="w-8 text-center text-base font-black font-game ${rankClass}">${index + 1}</div>
                     <div class="flex-grow min-w-0">
-                        <div class="font-bold text-white text-sm truncate">${item.name}</div>
-                        <div class="mt-1.5 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                        <div class="font-bold text-[#2A3644] text-sm truncate">${item.name}</div>
+                        <div class="mt-1.5 h-2 rounded-full bg-[#F4F6F9] border border-[#D4DEE9] overflow-hidden">
                             <div class="${barColor} h-full rounded-full transition-all" style="width:${barPct}%"></div>
                         </div>
-                        <div class="mt-1 text-[11px] ${isLikeMode ? 'text-emerald-300/90' : 'text-rose-300/90'} font-bold">${mainLabel} ${primary}票</div>
-                        <div class="text-[10px] text-slate-500">参考: ${subOther} ／ 普通 ${item.neutralCount}</div>
+                        <div class="mt-1 text-[11px] ${isLikeMode ? 'text-[#7D9B8A]/90' : 'text-[#C4878E]/90'} font-bold">${mainLabel} ${primary}票</div>
+                        <div class="text-[10px] text-[#8A97A5]">参考: ${subOther} ／ 普通 ${item.neutralCount}</div>
                     </div>
                     <div class="shrink-0 text-right min-w-[4.5rem]">
-                        <div class="text-[10px] font-bold ${isLikeMode ? 'text-emerald-400' : 'text-rose-400'}">${mainLabel}</div>
-                        <div class="text-xl font-black ${isLikeMode ? 'text-emerald-300' : 'text-rose-300'}">${primary}</div>
+                        <div class="text-[10px] font-bold ${isLikeMode ? 'text-[#7D9B8A]' : 'text-[#C4878E]'}">${mainLabel}</div>
+                        <div class="text-xl font-black ${isLikeMode ? 'text-[#7D9B8A]' : 'text-[#C4878E]'}">${primary}</div>
                     </div>
                 `;
                 rankingList.appendChild(row);
@@ -2323,7 +2343,7 @@
             const { stats, totalRespondents } = computeTaskStats();
 
             if (totalRespondents === 0) {
-                insightsEl.innerHTML = `<li class="text-slate-500">分析する回答データがありません。</li>`;
+                insightsEl.innerHTML = `<li class="text-[#8A97A5]">分析する回答データがありません。</li>`;
                 domainsEl.innerHTML = '';
                 tableBody.innerHTML = '';
                 if (countEl) countEl.textContent = '';
@@ -2333,35 +2353,35 @@
             const { disliked, domainRows, insights } = buildDislikeExtraction(stats, totalRespondents);
 
             insightsEl.innerHTML = insights.map(t =>
-                `<li class="flex gap-2"><span class="text-cyan-400 shrink-0">・</span><span>${t.replace(/「([^」]+)」/g, '<strong class="text-rose-300">「$1」</strong>').replace(/(\d+)/g, '<strong class="text-white">$1</strong>')}</span></li>`
+                `<li class="flex gap-2"><span class="text-[#B8956C] shrink-0">・</span><span>${t.replace(/「([^」]+)」/g, '<strong class="text-[#C4878E]">「$1」</strong>').replace(/(\d+)/g, '<strong class="text-[#2A3644]">$1</strong>')}</span></li>`
             ).join('');
 
             if (countEl) countEl.textContent = `${disliked.length}件を抽出`;
 
             tableBody.innerHTML = disliked.length ? disliked.map((s, i) => `
-                <tr class="hover:bg-slate-900/50">
-                    <td class="p-2.5 font-bold text-rose-300 font-game">${i + 1}</td>
-                    <td class="p-2.5 font-bold text-white">${s.name}</td>
-                    <td class="p-2.5 text-center text-orange-300">${s.dislikeCount}</td>
-                    <td class="p-2.5 text-center text-rose-300">${s.hateCount}</td>
-                    <td class="p-2.5 text-center font-extrabold text-rose-200">${s.totalDislikeCount}</td>
-                    <td class="p-2.5 text-center text-slate-300">${Math.round(s.dislikeRatio)}%</td>
-                    <td class="p-2.5 text-slate-400">${getTaskDomainName(s.id)}</td>
+                <tr class="hover:bg-[#EEF2F6]/70">
+                    <td class="p-2.5 font-bold text-[#C4878E] font-game">${i + 1}</td>
+                    <td class="p-2.5 font-bold text-[#2A3644]">${s.name}</td>
+                    <td class="p-2.5 text-center text-[#A88B74]">${s.dislikeCount}</td>
+                    <td class="p-2.5 text-center text-[#C4878E]">${s.hateCount}</td>
+                    <td class="p-2.5 text-center font-extrabold text-[#C4878E]">${s.totalDislikeCount}</td>
+                    <td class="p-2.5 text-center text-[#5C6B7A]">${Math.round(s.dislikeRatio)}%</td>
+                    <td class="p-2.5 text-[#8A97A5]">${getTaskDomainName(s.id)}</td>
                 </tr>
-            `).join('') : `<tr><td colspan="7" class="p-6 text-center text-slate-500">嫌い票のある業務はまだありません</td></tr>`;
+            `).join('') : `<tr><td colspan="7" class="p-6 text-center text-[#8A97A5]">嫌い票のある業務はまだありません</td></tr>`;
 
             const maxDomainDislike = Math.max(1, ...domainRows.map(d => d.dislike));
             domainsEl.innerHTML = domainRows.filter(d => d.dislike > 0).map(d => `
                 <div>
                     <div class="flex justify-between text-xs mb-1">
-                        <span class="font-bold text-slate-200">${d.name}</span>
-                        <span class="text-rose-300 font-bold">${d.dislike}票 <span class="text-slate-500 font-medium">（嫌い率${d.rate}%）</span></span>
+                        <span class="font-bold text-[#5C6B7A]">${d.name}</span>
+                        <span class="text-[#C4878E] font-bold">${d.dislike}票 <span class="text-[#8A97A5] font-medium">（嫌い率${d.rate}%）</span></span>
                     </div>
-                    <div class="h-2.5 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                    <div class="h-2.5 rounded-full bg-[#F4F6F9] border border-[#D4DEE9] overflow-hidden">
                         <div class="h-full bg-gradient-to-r from-rose-600 to-orange-500 rounded-full" style="width:${Math.round((d.dislike / maxDomainDislike) * 100)}%"></div>
                     </div>
                 </div>
-            `).join('') || `<div class="text-xs text-slate-500">まだ集計できる嫌い票がありません</div>`;
+            `).join('') || `<div class="text-xs text-[#8A97A5]">まだ集計できる嫌い票がありません</div>`;
         }
 
         function exportAnalysisPdf() {
@@ -2468,12 +2488,12 @@
             userHeadersContainer.innerHTML = '';
 
             if (userKeys.length === 0) {
-                userHeadersContainer.innerHTML = `<div class="p-2 text-slate-500 text-[11px]">（シートに回答者がいません）</div>`;
+                userHeadersContainer.innerHTML = `<div class="p-2 text-[#8A97A5] text-[11px]">（シートに回答者がいません）</div>`;
             }
 
             userKeys.forEach(user => {
                 const th = document.createElement('div');
-                th.className = "p-2 font-bold text-slate-300 truncate text-[11px] min-w-[65px] max-w-[85px] shrink-0 font-game";
+                th.className = "p-2 font-bold text-[#5C6B7A] truncate text-[11px] min-w-[65px] max-w-[85px] shrink-0 font-game";
                 th.textContent = user;
                 th.title = user;
                 userHeadersContainer.appendChild(th);
@@ -2484,7 +2504,7 @@
 
             TASKS.forEach(task => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-900/60 transition";
+                tr.className = "hover:bg-[#EEF2F6]/80 transition";
 
                 let dislikeTotal = 0;
                 let likeTotal = 0;
@@ -2494,27 +2514,27 @@
                     if (ans === 'dislike' || ans === 'hate') dislikeTotal++;
                     if (ans === 'like' || ans === 'love') likeTotal++;
 
-                    let badge = '<span class="text-slate-600">-</span>';
-                    if (ans === 'love') badge = '<span class="bg-pink-950 text-pink-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-pink-800">大好き</span>';
-                    if (ans === 'like') badge = '<span class="bg-emerald-950 text-emerald-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-emerald-800">好き</span>';
-                    if (ans === 'neutral') badge = '<span class="bg-blue-950 text-blue-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-blue-800">普通</span>';
-                    if (ans === 'dislike') badge = '<span class="bg-orange-950 text-orange-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-orange-800">嫌い</span>';
-                    if (ans === 'hate') badge = '<span class="bg-rose-950 text-rose-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-rose-800">大嫌い</span>';
-                    if (ans === 'unassigned') badge = '<span class="bg-slate-800 text-slate-400 font-bold px-1.5 py-0.5 rounded text-[10px] border border-slate-700">担当外</span>';
+                    let badge = '<span class="text-[#8A97A5]">-</span>';
+                    if (ans === 'love') badge = '<span class="bg-[#F6ECEE] text-[#C4878E] font-bold px-1.5 py-0.5 rounded text-[10px] border border-pink-800">大好き</span>';
+                    if (ans === 'like') badge = '<span class="bg-[#E8F0EC] text-[#7D9B8A] font-bold px-1.5 py-0.5 rounded text-[10px] border border-[#7D9B8A]/35">好き</span>';
+                    if (ans === 'neutral') badge = '<span class="bg-[#E8EEF4] text-[#8FA3B5] font-bold px-1.5 py-0.5 rounded text-[10px] border border-blue-800">普通</span>';
+                    if (ans === 'dislike') badge = '<span class="bg-[#F4EEE8] text-[#A88B74] font-bold px-1.5 py-0.5 rounded text-[10px] border border-orange-800">嫌い</span>';
+                    if (ans === 'hate') badge = '<span class="bg-[#F6ECEE] text-[#C4878E] font-bold px-1.5 py-0.5 rounded text-[10px] border border-[#C4878E]/40">大嫌い</span>';
+                    if (ans === 'unassigned') badge = '<span class="bg-[#D4DEE9] text-[#8A97A5] font-bold px-1.5 py-0.5 rounded text-[10px] border border-[#D4BC94]/45">担当外</span>';
 
-                    return `<div class="p-2 text-center border-r border-slate-800 min-w-[65px] max-w-[85px] shrink-0">${badge}</div>`;
+                    return `<div class="p-2 text-center border-r border-[#D4DEE9] min-w-[65px] max-w-[85px] shrink-0">${badge}</div>`;
                 }).join('');
 
                 tr.innerHTML = `
-                    <td class="p-2 border-r border-slate-800 text-center font-bold text-slate-500 font-game">${task.id}</td>
-                    <td class="p-2 border-r border-slate-800 font-bold text-white text-xs">${task.name}</td>
-                    <td class="p-0 border-r border-slate-800">
-                        <div class="flex items-center h-full divide-x divide-slate-800">
-                            ${userCells || '<div class="p-2 text-slate-600 text-[10px]">-</div>'}
+                    <td class="p-2 border-r border-[#D4DEE9] text-center font-bold text-[#8A97A5] font-game">${task.id}</td>
+                    <td class="p-2 border-r border-[#D4DEE9] font-bold text-[#2A3644] text-xs">${task.name}</td>
+                    <td class="p-0 border-r border-[#D4DEE9]">
+                        <div class="flex items-center h-full divide-x divide-[#E4EAF1]">
+                            ${userCells || '<div class="p-2 text-[#8A97A5] text-[10px]">-</div>'}
                         </div>
                     </td>
-                    <td class="p-2 text-center font-extrabold text-rose-400 bg-rose-950/20">${dislikeTotal}</td>
-                    <td class="p-2 text-center font-extrabold text-emerald-400 bg-emerald-950/20">${likeTotal}</td>
+                    <td class="p-2 text-center font-extrabold text-[#C4878E] bg-[#F6ECEE]/20">${dislikeTotal}</td>
+                    <td class="p-2 text-center font-extrabold text-[#7D9B8A] bg-[#E8F0EC]/20">${likeTotal}</td>
                 `;
 
                 tbody.appendChild(tr);
@@ -2532,18 +2552,18 @@
 
             TASKS.forEach((task, index) => {
                 const row = document.createElement('div');
-                row.className = "bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-1.5";
+                row.className = "bg-white/70 p-3 rounded-xl border border-[#D4DEE9] space-y-1.5";
 
                 const safeName = String(task.name).replace(/"/g, '&quot;');
                 const safeDesc = String(task.desc).replace(/"/g, '&quot;');
 
                 row.innerHTML = `
                     <div class="flex items-center space-x-2">
-                        <span class="w-8 text-center text-xs font-bold text-cyan-400 font-game">No.${task.id}</span>
-                        <input type="text" id="admin-task-name-${index}" value="${safeName}" class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-cyan-400 focus:outline-none">
+                        <span class="w-8 text-center text-xs font-bold text-[#B8956C] font-game">No.${task.id}</span>
+                        <input type="text" id="admin-task-name-${index}" value="${safeName}" class="flex-grow bg-[#EEF2F6] border border-[#D4BC94]/45 rounded-lg px-2.5 py-1 text-xs font-bold text-[#2A3644] focus:ring-1 focus:ring-[#B8956C] focus:outline-none">
                     </div>
                     <div class="pl-10">
-                        <input type="text" id="admin-task-desc-${index}" value="${safeDesc}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 focus:ring-1 focus:ring-cyan-400 focus:outline-none">
+                        <input type="text" id="admin-task-desc-${index}" value="${safeDesc}" class="w-full bg-[#EEF2F6] border border-[#D4BC94]/45 rounded-lg px-2.5 py-1 text-xs text-[#5C6B7A] focus:ring-1 focus:ring-[#B8956C] focus:outline-none">
                     </div>
                 `;
 
