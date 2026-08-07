@@ -962,6 +962,7 @@
         let currentDeckIndex = 0; // 0 to 49
         let googleSheetsWebAppUrl = ""; // Apps Script Web App URL (.../exec)
         const DEFAULT_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit";
+        const DEFAULT_GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzKAMhlCeh70EzZZ3DKwmMjNfSaEurMYL18wyuY5KeNJw1Urrpcsga2p1nuhjbx2VvDpQ/exec";
         const SHEETS_URL_STORAGE_KEY = "school_office_time_thief_sheets_url_v1";
 
         const CHOICE_LABEL_JA = {
@@ -1264,9 +1265,9 @@
 
         function loadGoogleSheetsUrl() {
             try {
-                googleSheetsWebAppUrl = localStorage.getItem(SHEETS_URL_STORAGE_KEY) || "";
+                googleSheetsWebAppUrl = localStorage.getItem(SHEETS_URL_STORAGE_KEY) || DEFAULT_GOOGLE_SHEETS_WEBAPP_URL || "";
             } catch (e) {
-                googleSheetsWebAppUrl = "";
+                googleSheetsWebAppUrl = DEFAULT_GOOGLE_SHEETS_WEBAPP_URL || "";
             }
             updateSheetsSyncStatus();
         }

@@ -263,3 +263,16 @@ function json_(obj) {
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+function testSyncFromClasp() {
+  var payload = {
+    action: 'sync_all',
+    exportedAt: new Date().toISOString(),
+    note: 'clasp API実行テスト',
+    tasks: [{ id: 1, name: 'テスト業務', desc: '接続確認' }],
+    responses: { '接続テスト': { '1': 'like' } },
+    diagnoses: { '接続テスト': { name: 'テスト', tagline: 'API OK' } }
+  };
+  syncAll_(SpreadsheetApp.openById(SPREADSHEET_ID), payload);
+  return 'OK ' + new Date().toISOString();
+}
