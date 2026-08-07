@@ -742,30 +742,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h2 class="text-base font-extrabold text-white">集計マトリクス表</h2>
-                        <p class="text-xs text-slate-400">回答者数の上限なし　｜　緑: 好き / 赤: 嫌い / 灰: 未実施　｜　JSONは後から読込可</p>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="syncAllToGoogleSheets()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="Googleスプレッドシートへ全員分を送信">
-                            <i class="fa-brands fa-google-drive"></i>
-                            <span>Sheetsへ送信</span>
-                        </button>
-                        <button onclick="exportJSON()" class="text-xs bg-cyan-700 hover:bg-cyan-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="回答・業務設定を丸ごとファイル保存（あとから読込可能）">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <span>JSON保存</span>
-                        </button>
-                        <button onclick="triggerImportJSON()" class="text-xs bg-amber-700 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="以前保存したJSONを読み込んで分析">
-                            <i class="fa-solid fa-folder-open"></i>
-                            <span>JSON読込</span>
-                        </button>
-                        <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="importJSON(event)">
-                        <button onclick="exportCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="Excelなどで集計するための表形式">
-                            <i class="fa-solid fa-file-csv"></i>
-                            <span>CSV出力</span>
-                        </button>
-                        <button onclick="resetAllData()" class="text-xs bg-slate-900 hover:bg-rose-950 text-slate-400 hover:text-rose-300 font-bold px-3 py-2 rounded-xl border border-slate-800 transition">
-                            全クリア
-                        </button>
+                        <p class="text-xs text-slate-400">緑: 好き / 赤: 嫌い / 灰: 未実施</p>
                     </div>
                 </div>
 
