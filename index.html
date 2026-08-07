@@ -642,10 +642,23 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#E8E4E2]">
-                    <p id="cloud-data-status" class="text-[11px] text-[#8A8580]">スプレッドシートから読込中...</p>
-                    <button onclick="reloadCloudAndRefresh()" class="text-[11px] font-bold text-[#121212] hover:text-[#121212] px-2.5 py-1 rounded-lg border border-[#C9A3A3]/45 hover:bg-[#F0EEEE] transition">
+                    <p id="cloud-data-status" class="text-[11px] text-[#8A8580] inline-flex items-center gap-2">
+                        <i id="cloud-data-status-icon" class="fa-solid fa-spinner animate-spin hidden"></i>
+                        <span id="cloud-data-status-text">スプレッドシートの準備中...</span>
+                    </p>
+                    <button id="btn-reload-cloud" onclick="reloadCloudAndRefresh()" class="text-[11px] font-bold text-[#121212] hover:text-[#121212] px-2.5 py-1 rounded-lg border border-[#C9A3A3]/45 hover:bg-[#F0EEEE] transition">
                         シートを再読込
                     </button>
+                </div>
+            </div>
+
+            <div id="cloud-loading-banner" class="hidden game-panel px-4 py-6 text-center">
+                <div class="inline-flex items-center gap-3 text-[#121212]">
+                    <i class="fa-solid fa-spinner animate-spin text-lg"></i>
+                    <div class="text-left">
+                        <div class="text-sm font-bold tracking-wide">データ読み込み中</div>
+                        <div class="text-[11px] text-[#8A8580]">スプレッドシートから回答を取得しています…</div>
+                    </div>
                 </div>
             </div>
 
@@ -813,6 +826,15 @@
 
         <!-- VIEW 3: MATRIX TAB -->
         <div id="view-matrix" class="hidden space-y-4">
+            <div id="cloud-loading-banner-matrix" class="hidden game-panel px-4 py-6 text-center">
+                <div class="inline-flex items-center gap-3 text-[#121212]">
+                    <i class="fa-solid fa-spinner animate-spin text-lg"></i>
+                    <div class="text-left">
+                        <div class="text-sm font-bold tracking-wide">データ読み込み中</div>
+                        <div class="text-[11px] text-[#8A8580]">スプレッドシートから回答を取得しています…</div>
+                    </div>
+                </div>
+            </div>
             <div class="game-panel p-5 space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -2048,7 +2070,6 @@
             } else if (tab === 'ranking') {
                 document.getElementById('view-ranking').classList.remove('hidden');
                 document.getElementById('nav-ranking').className = activeNav;
-                updateCloudStatusUI('スプレッドシートから読込中...');
                 await loadCloudResponsesFromSheets();
                 renderRankingAndAnalysis();
             } else if (tab === 'matrix') {
@@ -2301,13 +2322,51 @@
             return {};
         }
 
+        function setCloudLoadingUI(isLoading, message) {
+            const statusText = document.getElementById('cloud-data-status-text');
+            const statusIcon = document.getElementById('cloud-data-status-icon');
+            const reloadBtn = document.getElementById('btn-reload-cloud');
+            const banner = document.getElementById('cloud-loading-banner');
+            const bannerMatrix = document.getElementById('cloud-loading-banner-matrix');
+            const rankingList = document.getElementById('ranking-list');
+            const msg = message || (isLoading ? 'データ読み込み中…' : (cloudLoadMessage || ''));
+
+            if (statusText) statusText.textContent = msg;
+            if (statusIcon) statusIcon.classList.toggle('hidden', !isLoading);
+            if (reloadBtn) {
+                reloadBtn.disabled = !!isLoading;
+                reloadBtn.classList.toggle('opacity-50', !!isLoading);
+                reloadBtn.classList.toggle('pointer-events-none', !!isLoading);
+            }
+            if (banner) banner.classList.toggle('hidden', !isLoading);
+            if (bannerMatrix) bannerMatrix.classList.toggle('hidden', !isLoading);
+
+            // 集計タブ表示中は一覧を一時的にローディング表示へ
+            if (isLoading && rankingList && !document.getElementById('view-ranking').classList.contains('hidden')) {
+                rankingList.innerHTML = `
+                    <div class="p-10 text-center space-y-3">
+                        <i class="fa-solid fa-spinner animate-spin text-2xl text-[#121212]"></i>
+                        <div class="text-sm font-bold text-[#121212] tracking-wide">データ読み込み中</div>
+                        <div class="text-[11px] text-[#8A8580]">スプレッドシートから回答を取得しています…</div>
+                    </div>`;
+            }
+        }
+
         function updateCloudStatusUI(message) {
-            const el = document.getElementById('cloud-data-status');
-            if (el) el.textContent = message || cloudLoadMessage || '';
+            const statusText = document.getElementById('cloud-data-status-text');
+            const statusIcon = document.getElementById('cloud-data-status-icon');
+            const text = message || cloudLoadMessage || '';
+            if (statusText) statusText.textContent = text;
+            else {
+                const el = document.getElementById('cloud-data-status');
+                if (el) el.textContent = text;
+            }
+            if (statusIcon && cloudLoadStatus !== 'loading') {
+                statusIcon.classList.add('hidden');
+            }
         }
 
         async function reloadCloudAndRefresh() {
-            updateCloudStatusUI('スプレッドシートから再読込中...');
             await loadCloudResponsesFromSheets({ force: true });
             renderRankingAndAnalysis();
             if (!document.getElementById('view-matrix').classList.contains('hidden')) {
@@ -2317,6 +2376,7 @@
 
         async function loadCloudResponsesFromSheets(options = {}) {
             if (!options.force && cloudLoadStatus === 'ok' && cloudResponses) {
+                setCloudLoadingUI(false, cloudLoadMessage);
                 updateCloudStatusUI(cloudLoadMessage);
                 return cloudResponses;
             }
@@ -2327,11 +2387,13 @@
                 cloudResponses = {};
                 cloudProfiles = {};
                 cloudLoadMessage = '送信先URL未設定のため、シートデータを表示できません';
+                setCloudLoadingUI(false, cloudLoadMessage);
                 updateCloudStatusUI(cloudLoadMessage);
                 return cloudResponses;
             }
 
             cloudLoadStatus = 'loading';
+            setCloudLoadingUI(true, 'データ読み込み中…');
             try {
                 const exportUrl = url + (url.includes('?') ? '&' : '?') + 'action=export&_=' + Date.now();
                 const res = await fetch(exportUrl, { method: 'GET', redirect: 'follow', cache: 'no-store' });
@@ -2358,6 +2420,7 @@
                 cloudLoadStatus = 'ok';
                 const n = Object.keys(cloudResponses).length;
                 cloudLoadMessage = `データ元: Googleスプレッドシート（${n}名）`;
+                setCloudLoadingUI(false, cloudLoadMessage);
                 updateCloudStatusUI(cloudLoadMessage);
                 return cloudResponses;
             } catch (e) {
@@ -2366,6 +2429,7 @@
                 cloudResponses = {};
                 cloudProfiles = {};
                 cloudLoadMessage = 'シート読込失敗: ' + (e.message || e) + '（ブラウザ内の未送信データは集計に含めません）';
+                setCloudLoadingUI(false, cloudLoadMessage);
                 updateCloudStatusUI(cloudLoadMessage);
                 return cloudResponses;
             }
