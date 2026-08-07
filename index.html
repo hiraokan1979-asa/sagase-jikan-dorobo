@@ -2176,14 +2176,14 @@
             rankingList.innerHTML = '';
 
             const { stats, totalRespondents } = computeTaskStats();
-            const sortedByDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount || b.dislikeRatio - a.dislikeRatio);
-            const sortedByLike = [...stats].sort((a, b) => b.totalLikeCount - a.totalLikeCount);
+            const sortedByDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount || b.hateCount - a.hateCount || b.dislikeRatio - a.dislikeRatio);
+            const sortedByLike = [...stats].sort((a, b) => b.totalLikeCount - a.totalLikeCount || b.loveCount - a.loveCount);
 
             document.getElementById('stat-top-dislike').textContent = sortedByDislike[0]?.totalDislikeCount > 0
-                ? sortedByDislike[0].name
+                ? `${sortedByDislike[0].name}（${sortedByDislike[0].totalDislikeCount}票）`
                 : "なし";
             document.getElementById('stat-top-like').textContent = sortedByLike[0]?.totalLikeCount > 0
-                ? sortedByLike[0].name
+                ? `${sortedByLike[0].name}（${sortedByLike[0].totalLikeCount}票）`
                 : "なし";
             document.getElementById('stat-respondent-count').textContent = `${totalRespondents}名`;
 
@@ -2193,13 +2193,24 @@
             const activeRateEl = document.getElementById('stat-active-rate');
             if (activeRateEl) activeRateEl.textContent = `${avgActivePct} %`;
 
-            const sorted = [...stats].sort((a, b) => {
-                if (currentSortMode === 'like') return b.totalLikeCount - a.totalLikeCount || b.loveCount - a.loveCount;
-                return b.totalDislikeCount - a.totalDislikeCount || b.dislikeRatio - a.dislikeRatio;
-            });
-
             if (totalRespondents === 0) {
-                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">まだ回答がありません。調査タブで回答するか、マトリクスからJSON/サンプルを読み込んでください。</div>`;
+                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">まだスプレッドシートに回答がありません。調査を最後まで完了すると集計されます。</div>`;
+                return;
+            }
+
+            // 表示対象: ソート基準で票がある業務だけ（0票を上位に並べない）
+            let sorted;
+            if (currentSortMode === 'like') {
+                sorted = sortedByLike.filter(s => s.totalLikeCount > 0);
+            } else {
+                sorted = sortedByDislike.filter(s => s.totalDislikeCount > 0);
+            }
+
+            if (sorted.length === 0) {
+                const msg = currentSortMode === 'like'
+                    ? "「好き／大好き」の回答がまだありません。"
+                    : "「嫌い／大嫌い」の回答がまだありません。";
+                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">${msg}</div>`;
                 return;
             }
 
@@ -2212,7 +2223,6 @@
             for (let index = 0; index < limit; index++) {
                 const item = sorted[index];
                 const primary = currentSortMode === 'like' ? item.totalLikeCount : item.totalDislikeCount;
-                const secondary = currentSortMode === 'like' ? item.totalDislikeCount : item.totalLikeCount;
                 const barPct = Math.round((primary / maxVal) * 100);
                 const barColor = currentSortMode === 'like' ? 'bg-emerald-500' : 'bg-rose-500';
 
@@ -2230,10 +2240,15 @@
                         <div class="mt-1.5 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
                             <div class="${barColor} h-full rounded-full transition-all" style="width:${barPct}%"></div>
                         </div>
+                        <div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
+                            <span class="text-rose-300 font-bold">嫌い ${item.totalDislikeCount}<span class="text-slate-500 font-medium">（大嫌い${item.hateCount}）</span></span>
+                            <span class="text-emerald-300 font-bold">好き ${item.totalLikeCount}<span class="text-slate-500 font-medium">（大好き${item.loveCount}）</span></span>
+                            <span class="text-slate-500">普通 ${item.neutralCount}</span>
+                        </div>
                     </div>
-                    <div class="shrink-0 text-right w-20">
-                        <div class="text-sm font-black ${currentSortMode === 'like' ? 'text-emerald-300' : 'text-rose-300'}">${primary}<span class="text-[10px] font-bold text-slate-500 ml-0.5">票</span></div>
-                        <div class="text-[10px] text-slate-500">${currentSortMode === 'like' ? '嫌い' : '好き'} ${secondary}</div>
+                    <div class="shrink-0 text-right min-w-[4.5rem]">
+                        <div class="text-[10px] font-bold ${currentSortMode === 'like' ? 'text-emerald-400' : 'text-rose-400'}">${currentSortMode === 'like' ? '好き合計' : '嫌い合計'}</div>
+                        <div class="text-xl font-black ${currentSortMode === 'like' ? 'text-emerald-300' : 'text-rose-300'}">${primary}</div>
                     </div>
                 `;
                 rankingList.appendChild(row);
