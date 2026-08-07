@@ -458,9 +458,9 @@
                             <i class="fa-solid fa-user-ninja text-lg"></i>
                         </div>
                         <div>
-                            <div class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider font-game">PLAYER NAME</div>
+                            <div class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider font-game">ニックネーム</div>
                             <div class="flex items-center space-x-2">
-                                <span id="current-nickname-display" class="font-extrabold text-white text-base">ゲストプレイヤー</span>
+                                <span id="current-nickname-display" class="font-extrabold text-white text-base">ゲスト</span>
                             </div>
                         </div>
                     </div>
@@ -795,8 +795,8 @@
             </div>
 
             <div class="space-y-2 text-left">
-                <label for="input-init-nickname" class="text-xs font-bold text-slate-300 uppercase tracking-wider block font-game">
-                    ENTER PLAYER NICKNAME:
+                <label for="input-init-nickname" class="text-xs font-bold text-slate-300 tracking-wider block font-game">
+                    ニックネーム
                 </label>
                 <div class="relative">
                     <input type="text" id="input-init-nickname" placeholder="例: 匿名事務官A" class="w-full bg-slate-950 border-2 border-indigo-500/60 rounded-xl px-3.5 py-2.5 text-sm font-bold text-cyan-300 focus:border-cyan-400 focus:outline-none transition">
@@ -1404,7 +1404,7 @@
         function startSurveyWithCountdown() {
             const inputName = document.getElementById('input-init-nickname').value.trim();
             if (!inputName) {
-                alert("プレイヤー名（匿名可）を入力してください");
+                alert("ニックネーム（匿名可）を入力してください");
                 return;
             }
 
