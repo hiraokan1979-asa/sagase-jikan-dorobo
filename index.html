@@ -1365,12 +1365,50 @@
             setupKeyboardListeners();
         };
 
-        /* LOCAL STORAGE MANAGER */
+        /* LOCAL STORAGE MANAGER
+           - 途中回答だけブラウザに残す
+           - 50問完了分はシートが正本。端末には残さない
+        */
+        function isLocalAnswersComplete(answers) {
+            return Object.keys(answers || {}).length >= TASKS.length;
+        }
+
+        function pruneCompletedLocalResponses() {
+            let removed = false;
+            Object.keys(userResponses).forEach((user) => {
+                if (isLocalAnswersComplete(userResponses[user])) {
+                    delete userResponses[user];
+                    removed = true;
+                }
+            });
+            return removed;
+        }
+
+        function clearLocalUserAnswers(nickname) {
+            const user = normalizeNickname(nickname || currentNickname);
+            if (user) delete userResponses[user];
+            if (nickname) delete userResponses[nickname];
+            if (!userResponses[currentNickname]) {
+                userResponses[currentNickname] = {};
+            }
+            saveDataToStorage();
+            updateProgress();
+            if (typeof renderDeckCard === 'function') renderDeckCard();
+            if (typeof renderTaskList === 'function') renderTaskList();
+        }
+
         function saveDataToStorage() {
             try {
+                // 完了済み(50問)は端末に残さない。途中回答だけ保存する。
+                const persistable = {};
+                Object.keys(userResponses).forEach((user) => {
+                    if (!isLocalAnswersComplete(userResponses[user])) {
+                        persistable[user] = userResponses[user];
+                    }
+                });
                 const data = {
                     tasks: TASKS,
-                    responses: userResponses,
+                    responses: persistable,
                     currentNickname: currentNickname
                 };
                 localStorage.setItem('school_office_time_thief_data_v1', JSON.stringify(data));
@@ -1441,6 +1479,17 @@
                 }
             } catch (e) {
                 console.error("Failed to load data:", e);
+            }
+
+            // 以前完了分が残っていても破棄（シート削除後に端末だけ回答済みになるのを防ぐ）
+            if (pruneCompletedLocalResponses()) {
+                try {
+                    localStorage.setItem('school_office_time_thief_data_v1', JSON.stringify({
+                        tasks: TASKS,
+                        responses: userResponses,
+                        currentNickname: currentNickname
+                    }));
+                } catch (e) { /* ignore */ }
             }
 
             if (!userResponses[currentNickname]) {
@@ -1664,7 +1713,10 @@
 
             setTimeout(() => {
                 thanksModal.classList.add('hidden');
+                // 診断計算はメモリ上の回答を使う
                 showDiagnosisModalForCurrent();
+                // 完了分は端末に残さない（途中回答のみブラウザに覚える）
+                clearLocalUserAnswers(currentNickname);
                 thanksSyncInFlight = false;
             }, 1800);
         }
