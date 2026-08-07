@@ -1451,16 +1451,15 @@
         /* INITIALIZATION */
         window.onload = function() {
             loadDataFromStorage();
-            
-            if (!currentNickname || currentNickname === "ゲスト回答者") {
-                openNicknameModal();
-            } else {
-                document.getElementById('modal-nickname').classList.add('hidden');
-                updateNicknameDisplay();
-                renderDeckCard();
-                renderTaskList();
-                updateProgress();
+
+            // リロード時は常にニックネーム／経験年数の入力から開始する
+            currentNickname = "ゲスト回答者";
+            currentExperienceYears = "";
+            if (!userResponses[currentNickname]) {
+                userResponses[currentNickname] = {};
             }
+            updateNicknameDisplay();
+            openNicknameModal({ fresh: true });
 
             setupKeyboardListeners();
         };
@@ -1625,11 +1624,19 @@
         }
 
         /* NICKNAME & WELCOME MODAL LOGIC */
-        function openNicknameModal() {
-            document.getElementById('input-init-nickname').value = currentNickname === "ゲスト回答者" ? "" : currentNickname;
-            const selected = currentExperienceYears || userProfiles[currentNickname]?.experienceYears || "";
+        function openNicknameModal(options = {}) {
+            const fresh = !!options.fresh;
+            const nickInput = document.getElementById('input-init-nickname');
+            if (nickInput) {
+                nickInput.value = (!fresh && currentNickname && currentNickname !== "ゲスト回答者")
+                    ? currentNickname
+                    : "";
+            }
+            const selected = fresh
+                ? ""
+                : (currentExperienceYears || userProfiles[currentNickname]?.experienceYears || "");
             document.querySelectorAll('input[name="experience-years"]').forEach((el) => {
-                el.checked = el.value === selected;
+                el.checked = !!selected && el.value === selected;
             });
             document.getElementById('modal-nickname').classList.remove('hidden');
         }
@@ -1848,6 +1855,7 @@
                 if (result && result.ok) {
                     syncStatus.innerHTML = '<i class="fa-solid fa-circle-check text-[#7D9B8A]"></i><span>スプレッドシートへ記録しました</span>';
                     cloudResponses = null;
+                    cloudProfiles = null;
                     cloudLoadStatus = 'idle';
                 } else if (result && result.skipped) {
                     syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-[#B8956C]"></i><span>送信先URL未設定のため未記録</span>';
