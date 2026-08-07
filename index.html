@@ -684,12 +684,15 @@
 
             <!-- Sub navigation -->
             <div class="flex items-center justify-between gap-2 flex-wrap">
-                <div class="flex bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9]">
-                    <button id="btn-panel-rank" onclick="setRankingPanel('rank')" class="px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition">
+                <div class="flex bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9] flex-wrap">
+                    <button id="btn-panel-rank" onclick="setRankingPanel('rank')" class="px-3 sm:px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition">
                         ランキング
                     </button>
-                    <button id="btn-panel-analysis" onclick="setRankingPanel('analysis')" class="px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition">
+                    <button id="btn-panel-analysis" onclick="setRankingPanel('analysis')" class="px-3 sm:px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition">
                         分析
+                    </button>
+                    <button id="btn-panel-experience" onclick="setRankingPanel('experience')" class="px-3 sm:px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition">
+                        経験年数
                     </button>
                 </div>
                 <button onclick="openCharacterCatalogModal()" class="px-3 py-2 text-xs font-bold rounded-xl bg-[#EEF2F6] text-[#B8956C] border border-[#D4BC94]/45 hover:bg-[#E4EAF1] transition">
@@ -775,6 +778,65 @@
                     </h3>
                     <p class="text-[11px] text-[#8A97A5]">どの業務領域に「嫌い」が集まっているかを示します</p>
                     <div id="analysis-domains" class="space-y-2.5">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Experience years correlation -->
+            <div id="panel-experience" class="hidden space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs text-[#8A97A5]">経験年数ごとの好き／嫌い傾向と、年数帯による差が大きい業務を示します</p>
+                </div>
+
+                <div class="game-panel p-5 space-y-3">
+                    <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                        <i class="fa-solid fa-user-group text-[#B8956C]"></i>
+                        <span>経験年数の人数構成</span>
+                    </h3>
+                    <div id="exp-headcount" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                </div>
+
+                <div class="game-panel p-5 space-y-3">
+                    <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-[#B8956C]"></i>
+                        <span>経験年数×好き嫌い の要点</span>
+                    </h3>
+                    <ul id="exp-insights" class="space-y-2 text-sm text-[#5C6B7A] leading-relaxed"></ul>
+                </div>
+
+                <div class="game-panel p-5 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-[#8FA3B5]"></i>
+                            <span>経験年数帯別の好き／嫌い TOP</span>
+                        </h3>
+                        <div class="flex bg-[#F4F6F9] p-1 rounded-xl border border-[#D4DEE9]">
+                            <button type="button" id="exp-mode-dislike" onclick="setExperienceViewMode('dislike')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#C4878E] text-white">嫌い</button>
+                            <button type="button" id="exp-mode-like" onclick="setExperienceViewMode('like')" class="px-3 py-1.5 text-xs font-bold rounded-lg text-[#8A97A5] hover:text-[#2A3644]">好き</button>
+                        </div>
+                    </div>
+                    <div id="exp-group-panels" class="space-y-4"></div>
+                </div>
+
+                <div class="game-panel p-5 space-y-3">
+                    <h3 class="text-sm font-extrabold text-[#2A3644] flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-left-right text-[#C4878E]"></i>
+                        <span>経験年数で差が大きい業務</span>
+                    </h3>
+                    <p class="text-[11px] text-[#8A97A5]">年数帯ごとの嫌い率（または好き率）の差が大きい業務です。人数がいる年数帯のみ比較します。</p>
+                    <div class="overflow-x-auto custom-scrollbar border border-[#D4DEE9] rounded-xl">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-[#EEF2F6] text-[#5C6B7A]">
+                                <tr>
+                                    <th class="p-2.5">業務名</th>
+                                    <th class="p-2.5">高い側</th>
+                                    <th class="p-2.5">低い側</th>
+                                    <th class="p-2.5 text-center w-20">差</th>
+                                    <th class="p-2.5">領域</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exp-gap-table" class="divide-y divide-[#E4EAF1] bg-[#F4F6F9]/40"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1097,10 +1159,12 @@
         let currentSortMode = "dislike"; // 'dislike' | 'like'
         let currentSurveyMode = "deck"; // 'deck' or 'list'
         let currentDeckIndex = 0; // 0 to 49
-        let rankingPanel = "rank"; // 'rank' | 'analysis'
+        let rankingPanel = "rank"; // 'rank' | 'analysis' | 'experience'
         let rankingShowAll = false;
+        let experienceViewMode = "dislike"; // 'dislike' | 'like'
         let googleSheetsWebAppUrl = ""; // Apps Script Web App URL (.../exec)
         let cloudResponses = null; // スプレッドシート上の回答（分析の正）
+        let cloudProfiles = null; // { nickname: { experienceYears, experienceLabel } }
         let cloudLoadStatus = "idle"; // idle | loading | ok | error
         let cloudLoadMessage = "";
         const DEFAULT_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit";
@@ -2189,21 +2253,47 @@
             rankingPanel = panel;
             const rankBtn = document.getElementById('btn-panel-rank');
             const analysisBtn = document.getElementById('btn-panel-analysis');
+            const experienceBtn = document.getElementById('btn-panel-experience');
             const rankPanel = document.getElementById('panel-rank');
             const analysisPanel = document.getElementById('panel-analysis');
+            const experiencePanel = document.getElementById('panel-experience');
+
+            const idle = "px-3 sm:px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
+            const active = "px-3 sm:px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
+
+            if (rankBtn) rankBtn.className = idle;
+            if (analysisBtn) analysisBtn.className = idle;
+            if (experienceBtn) experienceBtn.className = idle;
+            rankPanel?.classList.add('hidden');
+            analysisPanel?.classList.add('hidden');
+            experiencePanel?.classList.add('hidden');
 
             if (panel === 'rank') {
-                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
-                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
-                rankPanel.classList.remove('hidden');
-                analysisPanel.classList.add('hidden');
+                if (rankBtn) rankBtn.className = active;
+                rankPanel?.classList.remove('hidden');
+            } else if (panel === 'experience') {
+                if (experienceBtn) experienceBtn.className = active;
+                experiencePanel?.classList.remove('hidden');
+                renderExperienceAnalysis();
             } else {
-                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-[#B8956C] text-white shadow-md transition";
-                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-[#8A97A5] hover:text-[#2A3644] transition";
-                analysisPanel.classList.remove('hidden');
-                rankPanel.classList.add('hidden');
+                if (analysisBtn) analysisBtn.className = active;
+                analysisPanel?.classList.remove('hidden');
                 renderAnalysis();
             }
+        }
+
+        function setExperienceViewMode(mode) {
+            experienceViewMode = (mode === 'like') ? 'like' : 'dislike';
+            const dislikeBtn = document.getElementById('exp-mode-dislike');
+            const likeBtn = document.getElementById('exp-mode-like');
+            if (experienceViewMode === 'dislike') {
+                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-[#C4878E] text-white";
+                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-[#8A97A5] hover:text-[#2A3644]";
+            } else {
+                if (likeBtn) likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-[#7D9B8A] text-white";
+                if (dislikeBtn) dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-[#8A97A5] hover:text-[#2A3644]";
+            }
+            renderExperienceAnalysis();
         }
 
         function toggleRankingLimit() {
@@ -2307,6 +2397,7 @@
             if (!url) {
                 cloudLoadStatus = 'error';
                 cloudResponses = {};
+                cloudProfiles = {};
                 cloudLoadMessage = '送信先URL未設定のため、シートデータを表示できません';
                 updateCloudStatusUI(cloudLoadMessage);
                 return cloudResponses;
@@ -2321,12 +2412,20 @@
                 if (!data || data.ok === false) throw new Error(data?.error || '不正な応答');
 
                 cloudResponses = {};
+                cloudProfiles = {};
                 Object.entries(data.responses || {}).forEach(([user, answers]) => {
                     cloudResponses[user] = {};
                     Object.entries(answers || {}).forEach(([taskId, val]) => {
                         cloudResponses[user][Number(taskId) || taskId] = val;
                         cloudResponses[user][String(taskId)] = val;
                     });
+                });
+                Object.entries(data.profiles || {}).forEach(([user, profile]) => {
+                    if (!profile || typeof profile !== 'object') return;
+                    cloudProfiles[user] = {
+                        experienceYears: profile.experienceYears || '',
+                        experienceLabel: profile.experienceLabel || experienceYearsLabel(profile.experienceYears || '')
+                    };
                 });
                 cloudLoadStatus = 'ok';
                 const n = Object.keys(cloudResponses).length;
@@ -2337,6 +2436,7 @@
                 console.error('Cloud load failed:', e);
                 cloudLoadStatus = 'error';
                 cloudResponses = {};
+                cloudProfiles = {};
                 cloudLoadMessage = 'シート読込失敗: ' + (e.message || e) + '（ブラウザ内の未送信データは集計に含めません）';
                 updateCloudStatusUI(cloudLoadMessage);
                 return cloudResponses;
@@ -2346,6 +2446,12 @@
         function renderRankingAndAnalysis() {
             renderRanking();
             if (rankingPanel === 'analysis') renderAnalysis();
+            if (rankingPanel === 'experience') renderExperienceAnalysis();
+        }
+
+        function getProfilesForAnalysis() {
+            if (cloudLoadStatus === 'ok' && cloudProfiles) return cloudProfiles;
+            return {};
         }
 
         function renderRanking() {
@@ -2579,6 +2685,199 @@
                     </div>
                 </div>
             `).join('') || `<div class="text-xs text-[#8A97A5]">まだ集計できる嫌い票がありません</div>`;
+        }
+
+        function computeTaskStatsForUsers(users, responses) {
+            return TASKS.map((task) => {
+                const taskId = Number(task.id);
+                let loveCount = 0, likeCount = 0, neutralCount = 0, dislikeCount = 0, hateCount = 0;
+                users.forEach((user) => {
+                    const ans = responses[user]?.[taskId] ?? responses[user]?.[String(taskId)];
+                    if (ans === 'love') loveCount++;
+                    else if (ans === 'like') likeCount++;
+                    else if (ans === 'neutral') neutralCount++;
+                    else if (ans === 'dislike') dislikeCount++;
+                    else if (ans === 'hate') hateCount++;
+                });
+                const activeCount = loveCount + likeCount + neutralCount + dislikeCount + hateCount;
+                const totalLikeCount = loveCount + likeCount;
+                const totalDislikeCount = dislikeCount + hateCount;
+                return {
+                    id: taskId,
+                    name: resolveTaskName(task),
+                    loveCount, likeCount, neutralCount, dislikeCount, hateCount,
+                    activeCount, totalLikeCount, totalDislikeCount,
+                    likeRate: activeCount > 0 ? (totalLikeCount / activeCount) * 100 : 0,
+                    dislikeRate: activeCount > 0 ? (totalDislikeCount / activeCount) * 100 : 0
+                };
+            });
+        }
+
+        function buildExperienceCorrelation() {
+            const responses = getResponsesForAnalysis();
+            const profiles = getProfilesForAnalysis();
+            const allUsers = Object.keys(responses);
+            const groups = EXPERIENCE_YEARS_OPTIONS.map((opt) => {
+                const users = allUsers.filter((u) => {
+                    const code = profiles[u]?.experienceYears || '';
+                    return code === opt.value;
+                });
+                const stats = computeTaskStatsForUsers(users, responses);
+                const topLike = [...stats]
+                    .filter((s) => s.totalLikeCount > 0)
+                    .sort((a, b) => b.totalLikeCount - a.totalLikeCount || b.likeRate - a.likeRate)
+                    .slice(0, 5);
+                const topDislike = [...stats]
+                    .filter((s) => s.totalDislikeCount > 0)
+                    .sort((a, b) => b.totalDislikeCount - a.totalDislikeCount || b.dislikeRate - a.dislikeRate)
+                    .slice(0, 5);
+                return { ...opt, users, count: users.length, stats, topLike, topDislike };
+            });
+
+            const unknownUsers = allUsers.filter((u) => {
+                const code = profiles[u]?.experienceYears || '';
+                return !EXPERIENCE_YEARS_OPTIONS.some((o) => o.value === code);
+            });
+
+            const activeGroups = groups.filter((g) => g.count > 0);
+            const mode = experienceViewMode;
+            const gaps = [];
+
+            TASKS.forEach((task) => {
+                const taskId = Number(task.id);
+                const rows = activeGroups.map((g) => {
+                    const s = g.stats.find((t) => Number(t.id) === taskId);
+                    const rate = mode === 'like' ? (s?.likeRate || 0) : (s?.dislikeRate || 0);
+                    const votes = mode === 'like' ? (s?.totalLikeCount || 0) : (s?.totalDislikeCount || 0);
+                    return { label: g.label, value: g.value, rate, votes, count: g.count };
+                }).filter((r) => r.count > 0);
+
+                if (rows.length < 2) return;
+                const ranked = [...rows].sort((a, b) => b.rate - a.rate);
+                const high = ranked[0];
+                const low = ranked[ranked.length - 1];
+                const gap = high.rate - low.rate;
+                if (gap < 20) return; // 差が小さいものは除外
+                if (high.votes === 0 && low.votes === 0) return;
+                gaps.push({
+                    id: taskId,
+                    name: resolveTaskName(task),
+                    high,
+                    low,
+                    gap,
+                    domain: getTaskDomainName(taskId)
+                });
+            });
+
+            gaps.sort((a, b) => b.gap - a.gap);
+
+            const insights = [];
+            insights.push(`回答者 ${allUsers.length} 名のうち、経験年数の記入があるのは ${allUsers.length - unknownUsers.length} 名です。`);
+            activeGroups.forEach((g) => {
+                insights.push(`${g.label}: ${g.count}名`);
+            });
+            if (unknownUsers.length > 0) {
+                insights.push(`経験年数未記入: ${unknownUsers.length}名（相関集計からは除外）`);
+            }
+
+            if (activeGroups.length >= 2) {
+                const focus = experienceViewMode === 'like' ? '好き' : '嫌い';
+                activeGroups.forEach((g) => {
+                    const top = experienceViewMode === 'like' ? g.topLike[0] : g.topDislike[0];
+                    if (top) {
+                        insights.push(`${g.label}で最も${focus}票が多い業務は「${top.name}」（${experienceViewMode === 'like' ? top.totalLikeCount : top.totalDislikeCount}票）。`);
+                    }
+                });
+                if (gaps[0]) {
+                    insights.push(
+                        `${focus}率の差が最も大きい業務は「${gaps[0].name}」（${gaps[0].high.label} ${Math.round(gaps[0].high.rate)}% ／ ${gaps[0].low.label} ${Math.round(gaps[0].low.rate)}%、差${Math.round(gaps[0].gap)}ポイント）。`
+                    );
+                }
+            } else if (activeGroups.length === 1) {
+                insights.push('比較できる経験年数帯が1つだけなので、相関の差はまだ十分に見えません。');
+            } else {
+                insights.push('経験年数付きの回答がまだありません。新規回答で経験年数を選ぶと集計されます。');
+            }
+
+            return { groups, unknownUsers, gaps, insights, totalRespondents: allUsers.length };
+        }
+
+        function renderExperienceAnalysis() {
+            const headEl = document.getElementById('exp-headcount');
+            const insightsEl = document.getElementById('exp-insights');
+            const groupsEl = document.getElementById('exp-group-panels');
+            const gapBody = document.getElementById('exp-gap-table');
+            if (!headEl || !insightsEl || !groupsEl || !gapBody) return;
+
+            const { groups, gaps, insights, totalRespondents } = buildExperienceCorrelation();
+            const isLike = experienceViewMode === 'like';
+            const accent = isLike ? '#7D9B8A' : '#C4878E';
+
+            if (totalRespondents === 0) {
+                headEl.innerHTML = '';
+                insightsEl.innerHTML = `<li class="text-[#8A97A5]">分析する回答データがありません。</li>`;
+                groupsEl.innerHTML = '';
+                gapBody.innerHTML = '';
+                return;
+            }
+
+            headEl.innerHTML = groups.map((g) => `
+                <div class="rounded-xl border border-[#D4BC94]/40 bg-white/70 px-3 py-3 text-center">
+                    <div class="text-[10px] font-bold text-[#8A97A5]">${g.label}</div>
+                    <div class="text-xl font-black text-[#2A3644] font-game mt-1">${g.count}<span class="text-xs font-bold text-[#8A97A5]">名</span></div>
+                </div>
+            `).join('');
+
+            insightsEl.innerHTML = insights.map((t) => {
+                const safe = String(t)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                const html = safe.replace(/「([^」]+)」/g, `<strong style="color:${accent}">「$1」</strong>`);
+                return `<li class="flex gap-2"><span class="text-[#B8956C] shrink-0">・</span><span>${html}</span></li>`;
+            }).join('');
+
+            groupsEl.innerHTML = groups.map((g) => {
+                const list = isLike ? g.topLike : g.topDislike;
+                if (g.count === 0) {
+                    return `
+                        <div class="rounded-xl border border-[#E4EAF1] bg-white/50 p-4">
+                            <div class="text-sm font-extrabold text-[#2A3644] mb-1">${g.label}</div>
+                            <p class="text-xs text-[#8A97A5]">この年数帯の回答者はまだいません</p>
+                        </div>`;
+                }
+                const rows = list.length ? list.map((s, i) => {
+                    const votes = isLike ? s.totalLikeCount : s.totalDislikeCount;
+                    const rate = Math.round(isLike ? s.likeRate : s.dislikeRate);
+                    return `<div class="flex items-center justify-between gap-2 text-xs py-1.5 border-b border-[#E4EAF1] last:border-0">
+                        <div class="min-w-0 flex items-center gap-2">
+                            <span class="font-game font-bold w-5" style="color:${accent}">${i + 1}</span>
+                            <span class="font-bold text-[#2A3644] truncate">${s.name}</span>
+                        </div>
+                        <div class="shrink-0 text-[#5C6B7A]">${votes}票（${rate}%）</div>
+                    </div>`;
+                }).join('') : `<p class="text-xs text-[#8A97A5]">${isLike ? '好き' : '嫌い'}票はまだありません</p>`;
+
+                return `
+                    <div class="rounded-xl border border-[#D4BC94]/35 bg-white/60 p-4">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <div class="text-sm font-extrabold text-[#2A3644]">${g.label}</div>
+                            <div class="text-[11px] font-bold text-[#8A97A5]">${g.count}名</div>
+                        </div>
+                        ${rows}
+                    </div>`;
+            }).join('');
+
+            const metric = isLike ? '好き率' : '嫌い率';
+            gapBody.innerHTML = gaps.length ? gaps.slice(0, 15).map((g) => `
+                <tr class="hover:bg-[#EEF2F6]/70">
+                    <td class="p-2.5 font-bold text-[#2A3644]">${g.name}</td>
+                    <td class="p-2.5 text-[#5C6B7A]">${g.high.label}<br><span class="font-bold" style="color:${accent}">${Math.round(g.high.rate)}%</span></td>
+                    <td class="p-2.5 text-[#5C6B7A]">${g.low.label}<br><span class="font-bold text-[#8A97A5]">${Math.round(g.low.rate)}%</span></td>
+                    <td class="p-2.5 text-center font-extrabold" style="color:${accent}">${Math.round(g.gap)}pt</td>
+                    <td class="p-2.5 text-[#8A97A5]">${g.domain}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="5" class="p-6 text-center text-[#8A97A5]">まだ比較できる${metric}の差が見つかりません（各年数帯の回答が増えると表示されます）</td></tr>`;
         }
 
         function exportAnalysisPdf() {
