@@ -931,24 +931,12 @@
                 </div>
             </div>
 
-            <button onclick="startSurveyWithCountdown()" class="w-full py-3.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#C9A962] to-[#B8956C] hover:brightness-105 text-white transition flex items-center justify-center space-x-2 font-game">
+            <button onclick="startSurvey()" class="w-full py-3.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#C9A962] to-[#B8956C] hover:brightness-105 text-white transition flex items-center justify-center space-x-2 font-game">
                 <span>診断をはじめる</span>
                 <i class="fa-solid fa-sparkles text-xs"></i>
             </button>
 
             <p class="text-[11px] text-[#8A97A5]">ニックネームと経験年数を入れて回答を始めます</p>
-        </div>
-    </div>
-
-    <!-- OVERLAY 2: COUNTDOWN SCREEN -->
-    <div id="modal-countdown" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="text-center space-y-3">
-            <div id="countdown-text" class="text-8xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#B8956C] via-[#8FA3B5] to-[#D4BC94] count-zoom-anim font-game">
-                3
-            </div>
-            <div id="countdown-subtext" class="text-[#B8956C] font-bold text-sm tracking-widest uppercase font-game">
-                まもなくはじまります
-            </div>
         </div>
     </div>
 
@@ -1641,7 +1629,7 @@
             document.getElementById('modal-nickname').classList.remove('hidden');
         }
 
-        function startSurveyWithCountdown() {
+        function startSurvey() {
             const inputName = normalizeNickname(document.getElementById('input-init-nickname').value);
             if (!inputName) {
                 alert("ニックネーム（匿名可）を入力してください");
@@ -1667,47 +1655,10 @@
             updateNicknameDisplay();
             document.getElementById('modal-nickname').classList.add('hidden');
 
-            runCountdownAnimation(() => {
-                currentDeckIndex = 0;
-                renderDeckCard();
-                renderTaskList();
-                updateProgress();
-            });
-        }
-
-        function runCountdownAnimation(callback) {
-            const overlay = document.getElementById('modal-countdown');
-            const countEl = document.getElementById('countdown-text');
-            const subEl = document.getElementById('countdown-subtext');
-
-            overlay.classList.remove('hidden');
-
-            let step = 3;
-            countEl.textContent = step;
-            subEl.textContent = "まもなくはじまります";
-            playSound('count');
-
-            const interval = setInterval(() => {
-                step--;
-                if (step > 0) {
-                    countEl.textContent = step;
-                    countEl.classList.remove('count-zoom-anim');
-                    void countEl.offsetWidth;
-                    countEl.classList.add('count-zoom-anim');
-                    playSound('count');
-                } else if (step === 0) {
-                    countEl.textContent = "START!";
-                    subEl.textContent = "調査を開始します";
-                    countEl.classList.remove('count-zoom-anim');
-                    void countEl.offsetWidth;
-                    countEl.classList.add('count-zoom-anim');
-                    playSound('start');
-                } else {
-                    clearInterval(interval);
-                    overlay.classList.add('hidden');
-                    if (callback) callback();
-                }
-            }, 750);
+            currentDeckIndex = 0;
+            renderDeckCard();
+            renderTaskList();
+            updateProgress();
         }
 
         function updateNicknameDisplay() {
@@ -1929,7 +1880,6 @@
             document.addEventListener('keydown', (e) => {
                 if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
                 if (!document.getElementById('modal-nickname').classList.contains('hidden')) return;
-                if (!document.getElementById('modal-countdown').classList.contains('hidden')) return;
                 if (currentSurveyMode !== 'deck') return;
 
                 if (e.key === '1') {
