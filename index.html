@@ -720,10 +720,6 @@
                             <span>JSON読込</span>
                         </button>
                         <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="importJSON(event)">
-                        <button onclick="generateSampleData()" class="text-xs bg-indigo-950 hover:bg-indigo-900 text-cyan-300 font-bold px-3 py-2 rounded-xl border border-indigo-700 transition flex items-center space-x-1">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>サンプル生成</span>
-                        </button>
                         <button onclick="exportCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="Excelなどで集計するための表形式">
                             <i class="fa-solid fa-file-csv"></i>
                             <span>CSV出力</span>
@@ -2374,45 +2370,6 @@
                 renderTaskList();
                 renderMatrix();
             }
-        }
-
-        /* SAMPLE DATA GENERATOR (人数は固定せず、デモ用に数名分を生成) */
-        function generateSampleData() {
-            if (!confirm("デモ用のサンプル回答を自動生成しますか？\n（既存の回答データは置き換えられます）")) {
-                return;
-            }
-
-            // 人数選択は不要。デモ用に数名分だけ生成（上限ではない）
-            const sampleCount = 12;
-            const sampleUsers = Array.from({ length: sampleCount }, (_, i) => `回答者_${i + 1}`);
-            userResponses = {};
-
-            const options = ['love', 'like', 'neutral', 'dislike', 'hate'];
-
-            TASKS.forEach(task => {
-                sampleUsers.forEach(u => {
-                    if (!userResponses[u]) userResponses[u] = {};
-
-                    let rand = Math.random();
-                    if ([1, 24, 5, 6].includes(task.id)) {
-                        userResponses[u][task.id] = rand < 0.4 ? 'hate' : (rand < 0.75 ? 'dislike' : 'neutral');
-                    } else if ([14, 31, 43].includes(task.id)) {
-                        userResponses[u][task.id] = rand < 0.4 ? 'love' : (rand < 0.75 ? 'like' : 'neutral');
-                    } else {
-                        userResponses[u][task.id] = options[Math.floor(rand * options.length)];
-                    }
-                });
-            });
-
-            currentNickname = sampleUsers[0];
-            saveDataToStorage();
-            updateNicknameDisplay();
-            renderDeckCard();
-            renderTaskList();
-            updateProgress();
-            renderMatrix();
-            if (typeof renderRankingAndAnalysis === 'function') renderRankingAndAnalysis();
-            alert(`サンプル回答を ${sampleCount} 名分生成しました。\n実際の調査では、ニックネームを変えて何人でも追加できます。`);
         }
 
         /* GOOGLE SHEETS SYNC (via Apps Script Web App) */
