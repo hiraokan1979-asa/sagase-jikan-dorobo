@@ -1,10 +1,8 @@
 /**
- * さがせ！時間泥棒 → Googleスプレッドシート受信スクリプト
+ * さがせ！時間泥棒 → Googleスプレッドシート 送受信スクリプト
  *
  * 対象スプレッドシート:
  * https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit
- *
- * セットアップは同フォルダの「セットアップ手順.txt」を参照。
  */
 
 var SPREADSHEET_ID = '1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E';
@@ -18,12 +16,29 @@ var CHOICE_LABELS = {
   unassigned: '担当外'
 };
 
-function doGet() {
-  return json_({
-    ok: true,
-    app: 'さがせ！時間泥棒',
-    message: 'このURLは有効です。アプリからPOSTでデータを送信してください。'
-  });
+var LABEL_TO_CODE = {
+  '大好き': 'love',
+  '好き': 'like',
+  '普通': 'neutral',
+  '嫌い': 'dislike',
+  '大嫌い': 'hate',
+  '担当外': 'unassigned'
+};
+
+function doGet(e) {
+  try {
+    var action = (e && e.parameter && e.parameter.action) || 'ping';
+    if (action === 'export' || action === 'all') {
+      return json_(exportAll_());
+    }
+    return json_({
+      ok: true,
+      app: 'さがせ！時間泥棒',
+      message: 'OK。action=export で全回答を取得できます。'
+    });
+  } catch (err) {
+    return json_({ ok: false, error: String(err) });
+  }
 }
 
 function doPost(e) {
@@ -38,6 +53,8 @@ function doPost(e) {
 
     if (action === 'sync_user' || action === 'upsert_user') {
       upsertUser_(ss, data);
+    } else if (action === 'export') {
+      return json_(exportAll_());
     } else {
       syncAll_(ss, data);
     }
@@ -48,9 +65,31 @@ function doPost(e) {
   }
 }
 
+function exportAll_() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var fromRaw = readRawResponses_(ss);
+  var responses = fromRaw.responses;
+  var source = '回答データ';
+
+  if (!responses || Object.keys(responses).length === 0) {
+    responses = readMatrixResponses_(ss);
+    source = 'マトリクス';
+  }
+
+  return {
+    ok: true,
+    source: source,
+    exportedAt: new Date().toISOString(),
+    respondentCount: Object.keys(responses).length,
+    responses: responses,
+    diagnoses: fromRaw.diagnoses || {}
+  };
+}
+
 function syncAll_(ss, data) {
   var tasks = normalizeTasks_(data.tasks);
   var responses = data.responses || {};
+  writeRawSheet_(ss, responses, data.diagnoses || {});
   writeMatrixSheet_(ss, tasks, responses, data.diagnoses || {});
   writeAnswersSheet_(ss, tasks, responses);
   writeMetaSheet_(ss, data);
@@ -61,22 +100,125 @@ function upsertUser_(ss, data) {
   var nickname = String(data.nickname || '').trim();
   if (!nickname) throw new Error('nickname が空です');
 
-  var answers = data.answers || {};
-  var responses = {};
-  responses[nickname] = answers;
+  var answers = normalizeAnswers_(data.answers || {});
+  var diagnosis = data.diagnosis || {};
 
-  var diagnoses = {};
-  if (data.diagnosis) {
-    diagnoses[nickname] = data.diagnosis;
-  }
-
-  // マトリクスは既存行を残しつつ当該回答者だけ更新
-  upsertMatrixRow_(ss, tasks, nickname, answers, diagnoses[nickname] || {});
+  upsertRawRow_(ss, nickname, answers, diagnosis);
+  upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis);
   appendAnswersForUser_(ss, tasks, nickname, answers);
   writeMetaSheet_(ss, {
     exportedAt: data.exportedAt || new Date().toISOString(),
-    note: '単一回答者の更新: ' + nickname
+    note: '完了送信: ' + nickname
   });
+}
+
+/** 機械可読な正本シート（分析用にアプリが読み戻す） */
+function writeRawSheet_(ss, responses, diagnoses) {
+  var sheet = getOrCreateSheet_(ss, '回答データ');
+  sheet.clear();
+  sheet.getRange(1, 1, 1, 5).setValues([[
+    '更新日時', '回答者', '回答JSON', '診断タイプ', 'キャッチコピー'
+  ]]);
+  sheet.setFrozenRows(1);
+
+  var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
+  var rows = [];
+  Object.keys(responses || {}).forEach(function (user) {
+    var diag = diagnoses[user] || {};
+    rows.push([
+      now,
+      user,
+      JSON.stringify(normalizeAnswers_(responses[user] || {})),
+      diag.name || '',
+      diag.tagline || ''
+    ]);
+  });
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, 5).setValues(rows);
+  }
+}
+
+function upsertRawRow_(ss, nickname, answers, diagnosis) {
+  var sheet = getOrCreateSheet_(ss, '回答データ');
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, 5).setValues([[
+      '更新日時', '回答者', '回答JSON', '診断タイプ', 'キャッチコピー'
+    ]]);
+    sheet.setFrozenRows(1);
+  }
+
+  var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
+  var row = [
+    now,
+    nickname,
+    JSON.stringify(normalizeAnswers_(answers)),
+    (diagnosis && diagnosis.name) || '',
+    (diagnosis && diagnosis.tagline) || ''
+  ];
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    var names = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+    for (var i = 0; i < names.length; i++) {
+      if (String(names[i][0]) === nickname) {
+        sheet.getRange(i + 2, 1, 1, 5).setValues([row]);
+        return;
+      }
+    }
+  }
+  sheet.appendRow(row);
+}
+
+function readRawResponses_(ss) {
+  var sheet = ss.getSheetByName('回答データ');
+  var result = { responses: {}, diagnoses: {} };
+  if (!sheet || sheet.getLastRow() < 2) return result;
+
+  var values = sheet.getDataRange().getValues();
+  for (var r = 1; r < values.length; r++) {
+    var nickname = String(values[r][1] || '').trim();
+    if (!nickname) continue;
+    var jsonText = values[r][2];
+    try {
+      var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText) : (jsonText || {});
+      result.responses[nickname] = normalizeAnswers_(parsed);
+    } catch (e) {
+      result.responses[nickname] = {};
+    }
+    result.diagnoses[nickname] = {
+      name: String(values[r][3] || ''),
+      tagline: String(values[r][4] || '')
+    };
+  }
+  return result;
+}
+
+function readMatrixResponses_(ss) {
+  var sheet = ss.getSheetByName('マトリクス');
+  var responses = {};
+  if (!sheet || sheet.getLastRow() < 2) return responses;
+
+  var values = sheet.getDataRange().getValues();
+  var header = values[0];
+  var taskCols = [];
+  for (var c = 4; c < header.length; c++) {
+    var h = String(header[c] || '');
+    var m = h.match(/^(\d+)_/);
+    if (m) taskCols.push({ col: c, id: Number(m[1]) });
+  }
+
+  for (var r = 1; r < values.length; r++) {
+    var nickname = String(values[r][1] || '').trim();
+    if (!nickname) continue;
+    var answers = {};
+    taskCols.forEach(function (tc) {
+      var label = String(values[r][tc.col] || '').trim();
+      var code = LABEL_TO_CODE[label];
+      if (code) answers[String(tc.id)] = code;
+    });
+    responses[nickname] = answers;
+  }
+  return responses;
 }
 
 function writeMatrixSheet_(ss, tasks, responses, diagnoses) {
@@ -97,15 +239,9 @@ function writeMatrixSheet_(ss, tasks, responses, diagnoses) {
   var rows = userKeys.map(function (user) {
     var answers = responses[user] || {};
     var diag = diagnoses[user] || {};
-    var row = [
-      now,
-      user,
-      diag.name || '',
-      diag.tagline || ''
-    ];
+    var row = [now, user, diag.name || '', diag.tagline || ''];
     tasks.forEach(function (t) {
-      var key = String(t.id);
-      var val = answers[key] != null ? answers[key] : answers[t.id];
+      var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
       row.push(labelChoice_(val));
     });
     return row;
@@ -126,8 +262,7 @@ function upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis) {
     (diagnosis && diagnosis.tagline) || ''
   ];
   tasks.forEach(function (t) {
-    var key = String(t.id);
-    var val = answers[key] != null ? answers[key] : answers[t.id];
+    var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
     row.push(labelChoice_(val));
   });
 
@@ -156,14 +291,13 @@ function ensureMatrixHeader_(sheet, tasks) {
     return;
   }
 
-  var existing = sheet.getRange(1, 1, 1, header.length).getValues()[0];
-  var needRewrite = existing.length < header.length;
-  if (!needRewrite) {
-    for (var i = 0; i < header.length; i++) {
-      if (String(existing[i] || '') !== header[i]) {
-        needRewrite = true;
-        break;
-      }
+  var width = Math.max(header.length, sheet.getLastColumn());
+  var existing = sheet.getRange(1, 1, 1, width).getValues()[0];
+  var needRewrite = false;
+  for (var i = 0; i < header.length; i++) {
+    if (String(existing[i] || '') !== header[i]) {
+      needRewrite = true;
+      break;
     }
   }
   if (needRewrite) {
@@ -185,8 +319,7 @@ function writeAnswersSheet_(ss, tasks, responses) {
   Object.keys(responses || {}).forEach(function (user) {
     var answers = responses[user] || {};
     tasks.forEach(function (t) {
-      var key = String(t.id);
-      var val = answers[key] != null ? answers[key] : answers[t.id];
+      var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
       if (!val) return;
       rows.push([now, user, t.id, t.name, val, labelChoice_(val)]);
     });
@@ -209,8 +342,7 @@ function appendAnswersForUser_(ss, tasks, nickname, answers) {
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
   var rows = [];
   tasks.forEach(function (t) {
-    var key = String(t.id);
-    var val = answers[key] != null ? answers[key] : answers[t.id];
+    var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
     if (!val) return;
     rows.push([now, nickname, t.id, t.name, val, labelChoice_(val)]);
   });
@@ -253,6 +385,16 @@ function normalizeTasks_(tasks) {
   });
 }
 
+function normalizeAnswers_(answers) {
+  var out = {};
+  Object.keys(answers || {}).forEach(function (k) {
+    var v = answers[k];
+    if (!v) return;
+    out[String(k)] = String(v);
+  });
+  return out;
+}
+
 function labelChoice_(val) {
   if (!val) return '';
   return CHOICE_LABELS[val] || String(val);
@@ -262,17 +404,4 @@ function json_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}
-
-function testSyncFromClasp() {
-  var payload = {
-    action: 'sync_all',
-    exportedAt: new Date().toISOString(),
-    note: 'clasp API実行テスト',
-    tasks: [{ id: 1, name: 'テスト業務', desc: '接続確認' }],
-    responses: { '接続テスト': { '1': 'like' } },
-    diagnoses: { '接続テスト': { name: 'テスト', tagline: 'API OK' } }
-  };
-  syncAll_(SpreadsheetApp.openById(SPREADSHEET_ID), payload);
-  return 'OK ' + new Date().toISOString();
 }

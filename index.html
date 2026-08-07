@@ -621,18 +621,26 @@
         <div id="view-ranking" class="hidden space-y-4">
 
             <!-- Compact summary -->
-            <div class="game-panel p-4 grid grid-cols-3 gap-3 text-center">
-                <div>
-                    <div class="text-[10px] text-slate-400 font-bold">回答者</div>
-                    <div id="stat-respondent-count" class="text-lg font-black text-white">0名</div>
+            <div class="game-panel p-4 space-y-3">
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold">回答者（シート）</div>
+                        <div id="stat-respondent-count" class="text-lg font-black text-white">--名</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-rose-400 font-bold">時間泥棒 1位</div>
+                        <div id="stat-top-dislike" class="text-sm font-extrabold text-rose-300 truncate px-1">--</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-emerald-400 font-bold">得意・好き 1位</div>
+                        <div id="stat-top-like" class="text-sm font-extrabold text-emerald-300 truncate px-1">--</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="text-[10px] text-rose-400 font-bold">時間泥棒 1位</div>
-                    <div id="stat-top-dislike" class="text-sm font-extrabold text-rose-300 truncate px-1">--</div>
-                </div>
-                <div>
-                    <div class="text-[10px] text-emerald-400 font-bold">得意・好き 1位</div>
-                    <div id="stat-top-like" class="text-sm font-extrabold text-emerald-300 truncate px-1">--</div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800">
+                    <p id="cloud-data-status" class="text-[11px] text-slate-400">スプレッドシートから読込中...</p>
+                    <button onclick="reloadCloudAndRefresh()" class="text-[11px] font-bold text-cyan-300 hover:text-white px-2.5 py-1 rounded-lg border border-slate-700 hover:bg-slate-900 transition">
+                        シートを再読込
+                    </button>
                 </div>
             </div>
 
@@ -835,10 +843,10 @@
                     全50項目の調査がすべて完了しました✨<br>時間泥棒の捜査・分析が完了しました！
                 </p>
             </div>
-            <div class="pt-2">
-                <div class="inline-flex items-center space-x-2 bg-indigo-950/90 border border-indigo-500/60 text-cyan-300 px-5 py-2.5 rounded-2xl text-xs font-bold font-game animate-pulse shadow-lg">
+            <div class="pt-2 space-y-2">
+                <div id="thanks-sync-status" class="inline-flex items-center space-x-2 bg-indigo-950/90 border border-indigo-500/60 text-cyan-300 px-5 py-2.5 rounded-2xl text-xs font-bold font-game shadow-lg">
                     <i class="fa-solid fa-spinner animate-spin"></i>
-                    <span>ジョブタイプ性格診断 結果を判定中...</span>
+                    <span>スプレッドシートへ記録中...</span>
                 </div>
             </div>
         </div>
@@ -1016,8 +1024,11 @@
         let rankingPanel = "rank"; // 'rank' | 'analysis'
         let rankingShowAll = false;
         let googleSheetsWebAppUrl = ""; // Apps Script Web App URL (.../exec)
+        let cloudResponses = null; // スプレッドシート上の回答（分析の正）
+        let cloudLoadStatus = "idle"; // idle | loading | ok | error
+        let cloudLoadMessage = "";
         const DEFAULT_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit";
-        const DEFAULT_GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzKAMhlCeh70EzZZ3DKwmMjNfSaEurMYL18wyuY5KeNJw1Urrpcsga2p1nuhjbx2VvDpQ/exec";
+        const DEFAULT_GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzBgV_kMhsxhhTAwbRzzwHb1sDUQwF9xC-2J4IOXOcy_vjDws1ePBTRaXviVPZv8TyyQg/exec";
         const SHEETS_URL_STORAGE_KEY = "school_office_time_thief_sheets_url_v1";
 
         const CHOICE_LABEL_JA = {
@@ -1320,7 +1331,12 @@
 
         function loadGoogleSheetsUrl() {
             try {
-                googleSheetsWebAppUrl = localStorage.getItem(SHEETS_URL_STORAGE_KEY) || DEFAULT_GOOGLE_SHEETS_WEBAPP_URL || "";
+                // 最新デプロイを優先（古いURLがlocalStorageに残ると読込・送信が失敗する）
+                const stored = localStorage.getItem(SHEETS_URL_STORAGE_KEY) || "";
+                googleSheetsWebAppUrl = DEFAULT_GOOGLE_SHEETS_WEBAPP_URL || stored || "";
+                if (googleSheetsWebAppUrl && googleSheetsWebAppUrl !== stored) {
+                    localStorage.setItem(SHEETS_URL_STORAGE_KEY, googleSheetsWebAppUrl);
+                }
             } catch (e) {
                 googleSheetsWebAppUrl = DEFAULT_GOOGLE_SHEETS_WEBAPP_URL || "";
             }
@@ -1567,21 +1583,35 @@
         }
 
         /* SHOW THANKS & CLEAR CELEBRATION SEQUENCE */
-        function showThanksAndClearSequence() {
+        async function showThanksAndClearSequence() {
             playSound('fanfare');
             triggerGrandFinaleConfetti();
 
             const thanksModal = document.getElementById('modal-thanks');
+            const syncStatus = document.getElementById('thanks-sync-status');
             thanksModal.classList.remove('hidden');
+            if (syncStatus) {
+                syncStatus.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i><span>スプレッドシートへ記録中...</span>';
+            }
 
-            // 完了時にSheetsへ自動送信（URL設定済みの場合）
-            syncUserToGoogleSheets(currentNickname, { silent: true });
+            // 完了時に必ずSheetsへ自動送信してから診断表示
+            const result = await syncUserToGoogleSheets(currentNickname, { silent: true });
+            if (syncStatus) {
+                if (result && result.ok) {
+                    syncStatus.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-300"></i><span>スプレッドシートへ記録しました</span>';
+                    cloudResponses = null;
+                    cloudLoadStatus = 'idle';
+                } else if (result && result.skipped) {
+                    syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-300"></i><span>送信先URL未設定のため未記録</span>';
+                } else {
+                    syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-300"></i><span>記録に失敗しました（再送は設定から）</span>';
+                }
+            }
 
-            // 2.2秒間「お疲れ様でした！」を表示した後、診断結果モーダルを開く
             setTimeout(() => {
                 thanksModal.classList.add('hidden');
                 showDiagnosisModalForCurrent();
-            }, 2200);
+            }, 1800);
         }
 
         /* TOAST CHEER MESSAGE */
@@ -1819,7 +1849,7 @@
         }
 
         /* TAB SWITCHER */
-        function switchTab(tab) {
+        async function switchTab(tab) {
             document.getElementById('view-survey').classList.add('hidden');
             document.getElementById('view-ranking').classList.add('hidden');
             document.getElementById('view-matrix').classList.add('hidden');
@@ -1835,10 +1865,13 @@
             } else if (tab === 'ranking') {
                 document.getElementById('view-ranking').classList.remove('hidden');
                 document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                updateCloudStatusUI('スプレッドシートから読込中...');
+                await loadCloudResponsesFromSheets();
                 renderRankingAndAnalysis();
             } else if (tab === 'matrix') {
                 document.getElementById('view-matrix').classList.remove('hidden');
                 document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                await loadCloudResponsesFromSheets();
                 renderMatrix();
             }
         }
@@ -1944,10 +1977,7 @@
 
             const count = Object.keys(userResponses[currentNickname] || {}).length;
             if (count >= 50) {
-                playSound('fanfare');
-                triggerGrandFinaleConfetti();
-                syncUserToGoogleSheets(currentNickname, { silent: true });
-                showDiagnosisModalForCurrent();
+                showThanksAndClearSequence();
             }
         }
 
@@ -2037,7 +2067,8 @@
         }
 
         function computeTaskStats() {
-            const userKeys = Object.keys(userResponses);
+            const source = getResponsesForAnalysis();
+            const userKeys = Object.keys(source);
             const totalRespondents = userKeys.length;
 
             const stats = TASKS.map(task => {
@@ -2046,7 +2077,7 @@
                 const haters = [];
 
                 userKeys.forEach(user => {
-                    const ans = userResponses[user]?.[task.id];
+                    const ans = source[user]?.[task.id] ?? source[user]?.[String(task.id)];
                     if (ans === 'love') { loveCount++; lovers.push(user); }
                     else if (ans === 'like') { likeCount++; lovers.push(user); }
                     else if (ans === 'neutral') neutralCount++;
@@ -2070,6 +2101,72 @@
             });
 
             return { stats, userKeys, totalRespondents };
+        }
+
+        function getResponsesForAnalysis() {
+            // 分析・ランキング・マトリクスはスプレッドシートのデータを正とする
+            if (cloudLoadStatus === 'ok' && cloudResponses) return cloudResponses;
+            return {};
+        }
+
+        function updateCloudStatusUI(message) {
+            const el = document.getElementById('cloud-data-status');
+            if (el) el.textContent = message || cloudLoadMessage || '';
+        }
+
+        async function reloadCloudAndRefresh() {
+            updateCloudStatusUI('スプレッドシートから再読込中...');
+            await loadCloudResponsesFromSheets({ force: true });
+            renderRankingAndAnalysis();
+            if (!document.getElementById('view-matrix').classList.contains('hidden')) {
+                renderMatrix();
+            }
+        }
+
+        async function loadCloudResponsesFromSheets(options = {}) {
+            if (!options.force && cloudLoadStatus === 'ok' && cloudResponses) {
+                updateCloudStatusUI(cloudLoadMessage);
+                return cloudResponses;
+            }
+
+            const url = (googleSheetsWebAppUrl || DEFAULT_GOOGLE_SHEETS_WEBAPP_URL || "").trim();
+            if (!url) {
+                cloudLoadStatus = 'error';
+                cloudResponses = {};
+                cloudLoadMessage = '送信先URL未設定のため、シートデータを表示できません';
+                updateCloudStatusUI(cloudLoadMessage);
+                return cloudResponses;
+            }
+
+            cloudLoadStatus = 'loading';
+            try {
+                const exportUrl = url + (url.includes('?') ? '&' : '?') + 'action=export&_=' + Date.now();
+                const res = await fetch(exportUrl, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || data.ok === false) throw new Error(data?.error || '不正な応答');
+
+                cloudResponses = {};
+                Object.entries(data.responses || {}).forEach(([user, answers]) => {
+                    cloudResponses[user] = {};
+                    Object.entries(answers || {}).forEach(([taskId, val]) => {
+                        cloudResponses[user][Number(taskId) || taskId] = val;
+                        cloudResponses[user][String(taskId)] = val;
+                    });
+                });
+                cloudLoadStatus = 'ok';
+                const n = Object.keys(cloudResponses).length;
+                cloudLoadMessage = `データ元: Googleスプレッドシート（${n}名）`;
+                updateCloudStatusUI(cloudLoadMessage);
+                return cloudResponses;
+            } catch (e) {
+                console.error('Cloud load failed:', e);
+                cloudLoadStatus = 'error';
+                cloudResponses = {};
+                cloudLoadMessage = 'シート読込失敗: ' + (e.message || e) + '（ブラウザ内の未送信データは集計に含めません）';
+                updateCloudStatusUI(cloudLoadMessage);
+                return cloudResponses;
+            }
         }
 
         function renderRankingAndAnalysis() {
@@ -2344,9 +2441,14 @@
 
         /* MATRIX TABLE DISPLAY */
         function renderMatrix() {
-            const userKeys = Object.keys(userResponses);
+            const source = getResponsesForAnalysis();
+            const userKeys = Object.keys(source);
             const userHeadersContainer = document.getElementById('matrix-user-headers');
             userHeadersContainer.innerHTML = '';
+
+            if (userKeys.length === 0) {
+                userHeadersContainer.innerHTML = `<div class="p-2 text-slate-500 text-[11px]">（シートに回答者がいません）</div>`;
+            }
 
             userKeys.forEach(user => {
                 const th = document.createElement('div');
@@ -2367,7 +2469,7 @@
                 let likeTotal = 0;
 
                 let userCells = userKeys.map(user => {
-                    const ans = userResponses[user]?.[task.id];
+                    const ans = source[user]?.[task.id] ?? source[user]?.[String(task.id)];
                     if (ans === 'dislike' || ans === 'hate') dislikeTotal++;
                     if (ans === 'like' || ans === 'love') likeTotal++;
 
@@ -2387,7 +2489,7 @@
                     <td class="p-2 border-r border-slate-800 font-bold text-white text-xs">${task.name}</td>
                     <td class="p-0 border-r border-slate-800">
                         <div class="flex items-center h-full divide-x divide-slate-800">
-                            ${userCells}
+                            ${userCells || '<div class="p-2 text-slate-600 text-[10px]">-</div>'}
                         </div>
                     </td>
                     <td class="p-2 text-center font-extrabold text-rose-400 bg-rose-950/20">${dislikeTotal}</td>
@@ -2544,17 +2646,21 @@
             const answers = userResponses[user];
             if (!answers || Object.keys(answers).length === 0) {
                 if (!options.silent) alert("この回答者のデータがありません。");
-                return;
+                return { ok: false };
             }
-            if (!getGoogleSheetsUrlOrWarn({ silent: true }) && options.silent) {
-                return; // 自動送信時はURL未設定なら黙ってスキップ
+            if (!getGoogleSheetsUrlOrWarn({ silent: true })) {
+                return { ok: false, skipped: true };
             }
             const char = calculatePersonalityType(user);
+            const normalized = {};
+            Object.entries(answers).forEach(([k, v]) => {
+                normalized[String(k)] = v;
+            });
             const payload = {
                 action: "sync_user",
                 exportedAt: new Date().toISOString(),
                 nickname: user,
-                answers: answers,
+                answers: normalized,
                 tasks: TASKS,
                 diagnosis: char ? { id: char.id, name: char.name, tagline: char.tagline } : {}
             };
