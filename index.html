@@ -201,7 +201,7 @@
                         </button>
                         <button id="nav-matrix" onclick="switchTab('matrix')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
                             <i class="fa-solid fa-chart-grid text-emerald-400"></i>
-                            <span class="hidden sm:inline">8人マトリクス</span>
+                            <span class="hidden sm:inline">マトリクス</span>
                         </button>
                     </nav>
 
@@ -697,13 +697,13 @@
             <span id="stat-active-rate" class="hidden">-- %</span>
         </div>
 
-        <!-- VIEW 3: MATRIX TAB (8 PERSONS) -->
+        <!-- VIEW 3: MATRIX TAB -->
         <div id="view-matrix" class="hidden space-y-4">
             <div class="game-panel p-5 space-y-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h2 class="text-base font-extrabold text-white">8名分 集計マトリクス表</h2>
-                        <p class="text-xs text-slate-400">緑: 好き / 赤: 嫌い / 灰: 未実施　｜　JSONは後からこの画面へ読み込んで再分析できます</p>
+                        <h2 class="text-base font-extrabold text-white">集計マトリクス表</h2>
+                        <p class="text-xs text-slate-400">回答者数の上限なし　｜　緑: 好き / 赤: 嫌い / 灰: 未実施　｜　JSONは後から読込可</p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
@@ -722,7 +722,7 @@
                         <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="importJSON(event)">
                         <button onclick="generateSampleData()" class="text-xs bg-indigo-950 hover:bg-indigo-900 text-cyan-300 font-bold px-3 py-2 rounded-xl border border-indigo-700 transition flex items-center space-x-1">
                             <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>8人分サンプル生成</span>
+                            <span>サンプル生成</span>
                         </button>
                         <button onclick="exportCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="Excelなどで集計するための表形式">
                             <i class="fa-solid fa-file-csv"></i>
@@ -792,7 +792,7 @@
                 <i class="fa-solid fa-play text-xs"></i>
             </button>
 
-            <p class="text-[11px] text-slate-500">全50問・キー操作対応カードデッキで快速判定</p>
+            <p class="text-[11px] text-slate-500">ニックネームを変えて何人でも回答できます（人数の選択は不要）</p>
         </div>
     </div>
 
@@ -2248,7 +2248,7 @@
             `).join('') : `<div class="text-xs text-slate-500 col-span-2">診断できる回答者がいません（各人10問以上回答が目安）</div>`;
         }
 
-        /* MATRIX TABLE DISPLAY (8 PERSONS) */
+        /* MATRIX TABLE DISPLAY */
         function renderMatrix() {
             const userKeys = Object.keys(userResponses);
             const userHeadersContainer = document.getElementById('matrix-user-headers');
@@ -2376,38 +2376,43 @@
             }
         }
 
-        /* SAMPLE DATA GENERATOR (8 PERSONS) */
+        /* SAMPLE DATA GENERATOR (人数は固定せず、デモ用に数名分を生成) */
         function generateSampleData() {
-            if (confirm("8人分のサンプル回答データを自動生成しますか？")) {
-                const sampleUsers = Array.from({ length: 8 }, (_, i) => `回答者_${i + 1}`);
-                userResponses = {};
-
-                const options = ['love', 'like', 'neutral', 'dislike', 'hate'];
-
-                TASKS.forEach(task => {
-                    sampleUsers.forEach(u => {
-                        if (!userResponses[u]) userResponses[u] = {};
-
-                        let rand = Math.random();
-                        if ([1, 24, 5, 6].includes(task.id)) {
-                            userResponses[u][task.id] = rand < 0.4 ? 'hate' : (rand < 0.75 ? 'dislike' : 'neutral');
-                        } else if ([14, 31, 43].includes(task.id)) {
-                            userResponses[u][task.id] = rand < 0.4 ? 'love' : (rand < 0.75 ? 'like' : 'neutral');
-                        } else {
-                            userResponses[u][task.id] = options[Math.floor(rand * options.length)];
-                        }
-                    });
-                });
-
-                currentNickname = sampleUsers[0];
-                saveDataToStorage();
-                updateNicknameDisplay();
-                renderDeckCard();
-                renderTaskList();
-                updateProgress();
-                renderMatrix();
-                alert("8人分のサンプルデータを生成しました。");
+            if (!confirm("デモ用のサンプル回答を自動生成しますか？\n（既存の回答データは置き換えられます）")) {
+                return;
             }
+
+            // 人数選択は不要。デモ用に数名分だけ生成（上限ではない）
+            const sampleCount = 12;
+            const sampleUsers = Array.from({ length: sampleCount }, (_, i) => `回答者_${i + 1}`);
+            userResponses = {};
+
+            const options = ['love', 'like', 'neutral', 'dislike', 'hate'];
+
+            TASKS.forEach(task => {
+                sampleUsers.forEach(u => {
+                    if (!userResponses[u]) userResponses[u] = {};
+
+                    let rand = Math.random();
+                    if ([1, 24, 5, 6].includes(task.id)) {
+                        userResponses[u][task.id] = rand < 0.4 ? 'hate' : (rand < 0.75 ? 'dislike' : 'neutral');
+                    } else if ([14, 31, 43].includes(task.id)) {
+                        userResponses[u][task.id] = rand < 0.4 ? 'love' : (rand < 0.75 ? 'like' : 'neutral');
+                    } else {
+                        userResponses[u][task.id] = options[Math.floor(rand * options.length)];
+                    }
+                });
+            });
+
+            currentNickname = sampleUsers[0];
+            saveDataToStorage();
+            updateNicknameDisplay();
+            renderDeckCard();
+            renderTaskList();
+            updateProgress();
+            renderMatrix();
+            if (typeof renderRankingAndAnalysis === 'function') renderRankingAndAnalysis();
+            alert(`サンプル回答を ${sampleCount} 名分生成しました。\n実際の調査では、ニックネームを変えて何人でも追加できます。`);
         }
 
         /* GOOGLE SHEETS SYNC (via Apps Script Web App) */
