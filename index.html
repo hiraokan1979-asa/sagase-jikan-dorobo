@@ -671,7 +671,7 @@
                     </button>
                 </div>
 
-                <p id="rank-helper-text" class="text-xs text-rose-300/90 px-1 font-bold">いま表示中: 嫌い・大嫌いが多い業務順</p>
+                <p id="rank-helper-text" class="text-xs text-rose-300/90 px-1 font-bold">いま表示中: 嫌いが多い業務順（大嫌いも嫌いに合算）</p>
 
                 <div id="ranking-list" class="game-panel overflow-hidden divide-y divide-slate-800/80">
                     <!-- rows -->
@@ -2057,10 +2057,10 @@
             if (helper) {
                 if (currentSortMode === 'dislike') {
                     helper.className = "text-xs text-rose-300/90 px-1 font-bold";
-                    helper.textContent = "いま表示中: 嫌い・大嫌いが多い業務順";
+                    helper.textContent = "いま表示中: 嫌いが多い業務順（大嫌いも嫌いに合算）";
                 } else {
                     helper.className = "text-xs text-emerald-300/90 px-1 font-bold";
-                    helper.textContent = "いま表示中: 好き・大好きが多い業務順";
+                    helper.textContent = "いま表示中: 好きが多い業務順（大好きも好きに合算）";
                 }
             }
             renderRanking();
@@ -2212,8 +2212,8 @@
 
             if (sorted.length === 0) {
                 const msg = currentSortMode === 'like'
-                    ? "「好き／大好き」の回答がまだありません。"
-                    : "「嫌い／大嫌い」の回答がまだありません。";
+                    ? "「好き」の回答がまだありません。"
+                    : "「嫌い」の回答がまだありません。";
                 rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">${msg}</div>`;
                 return;
             }
@@ -2227,7 +2227,10 @@
             for (let index = 0; index < limit; index++) {
                 const item = sorted[index];
                 const isLikeMode = currentSortMode === 'like';
-                const primary = isLikeMode ? item.totalLikeCount : item.totalDislikeCount;
+                // 大好き→好き、大嫌い→嫌いに合算した票数
+                const likeVotes = item.totalLikeCount;       // love + like
+                const dislikeVotes = item.totalDislikeCount; // hate + dislike
+                const primary = isLikeMode ? likeVotes : dislikeVotes;
                 const barPct = Math.round((primary / maxVal) * 100);
                 const barColor = isLikeMode ? 'bg-emerald-500' : 'bg-rose-500';
 
@@ -2236,14 +2239,10 @@
                 else if (index === 1) rankClass = "text-slate-300";
                 else if (index === 2) rankClass = "text-amber-600";
 
-                // タブに合わせて主役の数値だけ大きく出し、反対側は控えめに
                 const mainLabel = isLikeMode ? '好き' : '嫌い';
-                const mainDetail = isLikeMode
-                    ? `大好き ${item.loveCount} ＋ 好き ${item.likeCount}`
-                    : `大嫌い ${item.hateCount} ＋ 嫌い ${item.dislikeCount}`;
-                const subLabel = isLikeMode
-                    ? `嫌い ${item.totalDislikeCount}`
-                    : `好き ${item.totalLikeCount}`;
+                const subOther = isLikeMode
+                    ? `嫌い ${dislikeVotes}`
+                    : `好き ${likeVotes}`;
 
                 const row = document.createElement('div');
                 row.className = "px-4 py-3 flex items-center gap-3 hover:bg-slate-900/50 transition";
@@ -2254,11 +2253,11 @@
                         <div class="mt-1.5 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
                             <div class="${barColor} h-full rounded-full transition-all" style="width:${barPct}%"></div>
                         </div>
-                        <div class="mt-1 text-[11px] ${isLikeMode ? 'text-emerald-300/90' : 'text-rose-300/90'} font-bold">${mainDetail}</div>
-                        <div class="text-[10px] text-slate-500">参考: ${subLabel} ／ 普通 ${item.neutralCount}</div>
+                        <div class="mt-1 text-[11px] ${isLikeMode ? 'text-emerald-300/90' : 'text-rose-300/90'} font-bold">${mainLabel} ${primary}票</div>
+                        <div class="text-[10px] text-slate-500">参考: ${subOther} ／ 普通 ${item.neutralCount}</div>
                     </div>
                     <div class="shrink-0 text-right min-w-[4.5rem]">
-                        <div class="text-[10px] font-bold ${isLikeMode ? 'text-emerald-400' : 'text-rose-400'}">${mainLabel}合計</div>
+                        <div class="text-[10px] font-bold ${isLikeMode ? 'text-emerald-400' : 'text-rose-400'}">${mainLabel}</div>
                         <div class="text-xl font-black ${isLikeMode ? 'text-emerald-300' : 'text-rose-300'}">${primary}</div>
                     </div>
                 `;
