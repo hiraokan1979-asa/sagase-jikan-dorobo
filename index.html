@@ -163,6 +163,38 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #64748B;
         }
+
+        /* Print report (1枚PDF用) */
+        #print-report {
+            display: none;
+        }
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+            html, body {
+                background: #fff !important;
+                color: #111 !important;
+            }
+            body * {
+                visibility: hidden;
+            }
+            #print-report, #print-report * {
+                visibility: visible;
+            }
+            #print-report {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0;
+                color: #111;
+                background: #fff;
+                font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased bg-[#070A12] text-slate-100 selection:bg-indigo-500 selection:text-white">
@@ -642,12 +674,20 @@
                 </div>
             </div>
 
-            <!-- PANEL: Analysis -->
+            <!-- PANEL: Analysis（嫌い業務の抽出・研究用） -->
             <div id="panel-analysis" class="hidden space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs text-slate-400">嫌い・大嫌いの回答から、研究用の「時間泥棒業務」を抽出します</p>
+                    <button onclick="exportAnalysisPdf()" class="text-xs font-bold bg-rose-700 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>分析結果を1枚PDFで出力</span>
+                    </button>
+                </div>
+
                 <div class="game-panel p-5 space-y-3">
                     <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
                         <i class="fa-solid fa-lightbulb text-amber-300"></i>
-                        <span>ひと目でわかる要点</span>
+                        <span>研究メモ（要点）</span>
                     </h3>
                     <ul id="analysis-insights" class="space-y-2 text-sm text-slate-300 leading-relaxed">
                         <!-- bullets -->
@@ -655,42 +695,41 @@
                 </div>
 
                 <div class="game-panel p-5 space-y-3">
-                    <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-cyan-300"></i>
-                        <span>領域別の負担度</span>
-                    </h3>
-                    <p class="text-[11px] text-slate-500">嫌い・大嫌いの割合が高い領域ほど「時間泥棒」が多いです</p>
-                    <div id="analysis-domains" class="space-y-2.5">
-                        <!-- domain bars -->
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="game-panel p-5 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
                         <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
-                            <span>改善優先（TOP5）</span>
+                            <i class="fa-solid fa-skull text-rose-400"></i>
+                            <span>抽出：嫌いな業務一覧</span>
                         </h3>
-                        <p class="text-[11px] text-slate-500">嫌い票が多く、担当者もいる業務ほど優先度高</p>
-                        <div id="analysis-priority" class="space-y-2"></div>
+                        <span id="analysis-dislike-count" class="text-[11px] text-slate-500"></span>
                     </div>
-
-                    <div class="game-panel p-5 space-y-3">
-                        <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-handshake text-emerald-400"></i>
-                            <span>分担のヒント</span>
-                        </h3>
-                        <p class="text-[11px] text-slate-500">嫌いが多い業務を「好き」な人がいれば、依頼・分担の候補です</p>
-                        <div id="analysis-share" class="space-y-2"></div>
+                    <p class="text-[11px] text-slate-500">嫌い票（嫌い＋大嫌い）が1票以上の業務のみ表示。票数が多い順です。</p>
+                    <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-900 text-slate-300">
+                                <tr>
+                                    <th class="p-2.5 w-10">順</th>
+                                    <th class="p-2.5">業務名</th>
+                                    <th class="p-2.5 text-center w-16">嫌い</th>
+                                    <th class="p-2.5 text-center w-16">大嫌い</th>
+                                    <th class="p-2.5 text-center w-16">合計</th>
+                                    <th class="p-2.5 text-center w-20">嫌い率</th>
+                                    <th class="p-2.5">領域</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysis-dislike-table" class="divide-y divide-slate-800 bg-slate-950/40">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
                 <div class="game-panel p-5 space-y-3">
                     <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-users text-indigo-300"></i>
-                        <span>ジョブタイプ分布</span>
+                        <i class="fa-solid fa-layer-group text-cyan-300"></i>
+                        <span>領域別の嫌い集中度</span>
                     </h3>
-                    <div id="analysis-jobs" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                    <p class="text-[11px] text-slate-500">どの業務領域に「嫌い」が集まっているかを示します</p>
+                    <div id="analysis-domains" class="space-y-2.5">
+                    </div>
                 </div>
             </div>
 
@@ -986,6 +1025,9 @@
     <footer class="border-t border-slate-800/80 py-3 text-center text-xs text-slate-500 mt-auto bg-[#070A12]">
         さがせ！時間泥棒 &copy; 学校事務 業務診断ナビ QUEST
     </footer>
+
+    <!-- 1枚PDF用レポート（画面では非表示・印刷時のみ） -->
+    <div id="print-report" aria-hidden="true"></div>
 
     <script>
         /* APP STATE VARIABLES */
@@ -2128,120 +2170,199 @@
             }
         }
 
-        function renderAnalysis() {
-            const insightsEl = document.getElementById('analysis-insights');
-            const domainsEl = document.getElementById('analysis-domains');
-            const priorityEl = document.getElementById('analysis-priority');
-            const shareEl = document.getElementById('analysis-share');
-            const jobsEl = document.getElementById('analysis-jobs');
-            if (!insightsEl) return;
+        function getTaskDomainName(taskId) {
+            const domain = TASK_DOMAINS.find(d => d.ids.includes(taskId));
+            return domain ? domain.name : "その他";
+        }
 
-            const { stats, userKeys, totalRespondents } = computeTaskStats();
+        function buildDislikeExtraction(stats, totalRespondents) {
+            const disliked = [...stats]
+                .filter(s => s.totalDislikeCount > 0)
+                .sort((a, b) => b.totalDislikeCount - a.totalDislikeCount || b.hateCount - a.hateCount || b.dislikeRatio - a.dislikeRatio);
 
-            if (totalRespondents === 0) {
-                insightsEl.innerHTML = `<li class="text-slate-500">分析する回答データがありません。</li>`;
-                domainsEl.innerHTML = '';
-                priorityEl.innerHTML = '';
-                shareEl.innerHTML = '';
-                jobsEl.innerHTML = '';
-                return;
-            }
-
-            const byDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount);
-            const byLike = [...stats].sort((a, b) => b.totalLikeCount - a.totalLikeCount);
-            const byPriority = [...stats].sort((a, b) => b.priorityScore - a.priorityScore || b.totalDislikeCount - a.totalDislikeCount);
-            const topThief = byDislike.find(s => s.totalDislikeCount > 0);
-            const topLoved = byLike.find(s => s.totalLikeCount > 0);
-            const highHateRate = [...stats]
-                .filter(s => s.activeCount >= Math.max(1, Math.ceil(totalRespondents * 0.4)))
-                .sort((a, b) => b.dislikeRatio - a.dislikeRatio)[0];
-
-            const insights = [];
-            insights.push(`回答者は <strong class="text-white">${totalRespondents}名</strong> です。`);
-            if (topThief) {
-                insights.push(`いちばんの時間泥棒は <strong class="text-rose-300">「${topThief.name}」</strong>（嫌い ${topThief.totalDislikeCount}票／うち大嫌い ${topThief.hateCount}）。`);
-            }
-            if (topLoved) {
-                insights.push(`得意・好きが多いのは <strong class="text-emerald-300">「${topLoved.name}」</strong>（好き ${topLoved.totalLikeCount}票）。`);
-            }
-            if (highHateRate && highHateRate.dislikeRatio >= 50) {
-                insights.push(`担当者の中でも不満率が高いのは <strong class="text-amber-300">「${highHateRate.name}」</strong>（嫌い率 ${Math.round(highHateRate.dislikeRatio)}%）。効率化・標準化の候補です。`);
-            }
-            const shareCandidates = byDislike.filter(s => s.totalDislikeCount >= 2 && s.lovers.length > 0).slice(0, 3);
-            if (shareCandidates.length > 0) {
-                insights.push(`分担できそうな業務が <strong class="text-cyan-300">${shareCandidates.length}件</strong> あります（下の「分担のヒント」参照）。`);
-            } else {
-                insights.push(`いまは「嫌いが多いのに好きな人がいる」業務が少ないです。外注・デジタル化・手順の見直しを検討してみてください。`);
-            }
-            insightsEl.innerHTML = insights.map(t => `<li class="flex gap-2"><span class="text-cyan-400 shrink-0">・</span><span>${t}</span></li>`).join('');
-
-            // Domain bars
             const domainRows = TASK_DOMAINS.map(domain => {
-                let dislike = 0, active = 0;
+                let dislike = 0, active = 0, hate = 0;
                 domain.ids.forEach(id => {
                     const s = stats.find(t => t.id === id);
                     if (!s) return;
                     dislike += s.totalDislikeCount;
+                    hate += s.hateCount;
                     active += s.activeCount;
                 });
                 const rate = active > 0 ? Math.round((dislike / active) * 100) : 0;
-                return { ...domain, dislike, active, rate };
-            }).sort((a, b) => b.rate - a.rate || b.dislike - a.dislike);
+                return { ...domain, dislike, hate, active, rate };
+            }).sort((a, b) => b.dislike - a.dislike || b.rate - a.rate);
 
-            const maxDomainRate = Math.max(1, ...domainRows.map(d => d.rate));
-            domainsEl.innerHTML = domainRows.map(d => `
+            const topThief = disliked[0] || null;
+            const highHateRate = [...stats]
+                .filter(s => s.activeCount >= Math.max(1, Math.ceil(totalRespondents * 0.4)) && s.totalDislikeCount > 0)
+                .sort((a, b) => b.dislikeRatio - a.dislikeRatio)[0] || null;
+            const topDomain = domainRows.find(d => d.dislike > 0) || null;
+
+            const insights = [];
+            insights.push(`回答者は ${totalRespondents} 名です。`);
+            insights.push(`嫌い票がある業務は ${disliked.length} 件抽出されました（全${stats.length}業務中）。`);
+            if (topThief) {
+                insights.push(`最も嫌い票が多い業務は「${topThief.name}」（合計${topThief.totalDislikeCount}票／大嫌い${topThief.hateCount}票）。`);
+            }
+            if (highHateRate && highHateRate.dislikeRatio >= 50) {
+                insights.push(`担当内嫌い率が高い業務は「${highHateRate.name}」（嫌い率${Math.round(highHateRate.dislikeRatio)}%）。今後の業務改善・研究の重点候補です。`);
+            }
+            if (topDomain) {
+                insights.push(`領域としては「${topDomain.name}」に嫌い票が集中しています（${topDomain.dislike}票）。`);
+            }
+            if (disliked.length === 0) {
+                insights.push("現時点で嫌い票のある業務はありません。");
+            }
+
+            return { disliked, domainRows, insights, topThief, highHateRate, topDomain };
+        }
+
+        function renderAnalysis() {
+            const insightsEl = document.getElementById('analysis-insights');
+            const domainsEl = document.getElementById('analysis-domains');
+            const tableBody = document.getElementById('analysis-dislike-table');
+            const countEl = document.getElementById('analysis-dislike-count');
+            if (!insightsEl || !tableBody) return;
+
+            const { stats, totalRespondents } = computeTaskStats();
+
+            if (totalRespondents === 0) {
+                insightsEl.innerHTML = `<li class="text-slate-500">分析する回答データがありません。</li>`;
+                domainsEl.innerHTML = '';
+                tableBody.innerHTML = '';
+                if (countEl) countEl.textContent = '';
+                return;
+            }
+
+            const { disliked, domainRows, insights } = buildDislikeExtraction(stats, totalRespondents);
+
+            insightsEl.innerHTML = insights.map(t =>
+                `<li class="flex gap-2"><span class="text-cyan-400 shrink-0">・</span><span>${t.replace(/「([^」]+)」/g, '<strong class="text-rose-300">「$1」</strong>').replace(/(\d+)/g, '<strong class="text-white">$1</strong>')}</span></li>`
+            ).join('');
+
+            if (countEl) countEl.textContent = `${disliked.length}件を抽出`;
+
+            tableBody.innerHTML = disliked.length ? disliked.map((s, i) => `
+                <tr class="hover:bg-slate-900/50">
+                    <td class="p-2.5 font-bold text-rose-300 font-game">${i + 1}</td>
+                    <td class="p-2.5 font-bold text-white">${s.name}</td>
+                    <td class="p-2.5 text-center text-orange-300">${s.dislikeCount}</td>
+                    <td class="p-2.5 text-center text-rose-300">${s.hateCount}</td>
+                    <td class="p-2.5 text-center font-extrabold text-rose-200">${s.totalDislikeCount}</td>
+                    <td class="p-2.5 text-center text-slate-300">${Math.round(s.dislikeRatio)}%</td>
+                    <td class="p-2.5 text-slate-400">${getTaskDomainName(s.id)}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="7" class="p-6 text-center text-slate-500">嫌い票のある業務はまだありません</td></tr>`;
+
+            const maxDomainDislike = Math.max(1, ...domainRows.map(d => d.dislike));
+            domainsEl.innerHTML = domainRows.filter(d => d.dislike > 0).map(d => `
                 <div>
                     <div class="flex justify-between text-xs mb-1">
                         <span class="font-bold text-slate-200">${d.name}</span>
-                        <span class="text-rose-300 font-bold">${d.rate}% <span class="text-slate-500 font-medium">（嫌い${d.dislike}/${d.active || 0}）</span></span>
+                        <span class="text-rose-300 font-bold">${d.dislike}票 <span class="text-slate-500 font-medium">（嫌い率${d.rate}%）</span></span>
                     </div>
                     <div class="h-2.5 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-rose-600 to-orange-500 rounded-full" style="width:${Math.round((d.rate / maxDomainRate) * 100)}%"></div>
+                        <div class="h-full bg-gradient-to-r from-rose-600 to-orange-500 rounded-full" style="width:${Math.round((d.dislike / maxDomainDislike) * 100)}%"></div>
                     </div>
                 </div>
-            `).join('');
+            `).join('') || `<div class="text-xs text-slate-500">まだ集計できる嫌い票がありません</div>`;
+        }
 
-            // Priority TOP5
-            priorityEl.innerHTML = byPriority.filter(s => s.totalDislikeCount > 0).slice(0, 5).map((s, i) => `
-                <div class="flex items-start gap-2 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
-                    <span class="text-xs font-black text-rose-400 font-game w-5">${i + 1}</span>
-                    <div class="min-w-0">
-                        <div class="text-sm font-bold text-white truncate">${s.name}</div>
-                        <div class="text-[11px] text-slate-400">嫌い${s.totalDislikeCount}票 / 担当${s.activeCount}人 / 嫌い率${Math.round(s.dislikeRatio)}%</div>
+        function exportAnalysisPdf() {
+            const { stats, totalRespondents } = computeTaskStats();
+            if (totalRespondents === 0) {
+                alert("出力する回答データがありません。先に調査を実施してください。");
+                return;
+            }
+
+            const { disliked, domainRows, insights } = buildDislikeExtraction(stats, totalRespondents);
+            const report = document.getElementById('print-report');
+            const now = new Date();
+            const dateLabel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+
+            // 1枚に収めるため、抽出一覧は上位12件＋領域上位
+            const topList = disliked.slice(0, 12);
+            const topDomains = domainRows.filter(d => d.dislike > 0).slice(0, 6);
+
+            report.innerHTML = `
+                <div style="font-size:11px; line-height:1.45; color:#111;">
+                    <div style="border-bottom:2px solid #be123c; padding-bottom:8px; margin-bottom:10px;">
+                        <div style="font-size:16px; font-weight:800; margin:0;">さがせ！時間泥棒　嫌い業務抽出レポート</div>
+                        <div style="margin-top:4px; color:#444;">作成日: ${dateLabel}　／　回答者: ${totalRespondents}名　／　抽出件数: ${disliked.length}件</div>
+                        <div style="margin-top:2px; color:#666;">目的: 学校事務における嫌われやすい業務（時間泥棒）の把握と今後の研究・改善への活用</div>
+                    </div>
+
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#9f1239;">■ 研究メモ（要点）</div>
+                        <ol style="margin:0; padding-left:18px;">
+                            ${insights.map(t => `<li style="margin-bottom:2px;">${t}</li>`).join('')}
+                        </ol>
+                    </div>
+
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#9f1239;">■ 嫌いな業務 抽出一覧（票数順・上位${topList.length}件）</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                            <thead>
+                                <tr style="background:#fff1f2;">
+                                    <th style="border:1px solid #ccc; padding:4px; width:28px;">順</th>
+                                    <th style="border:1px solid #ccc; padding:4px; text-align:left;">業務名</th>
+                                    <th style="border:1px solid #ccc; padding:4px; width:40px;">嫌い</th>
+                                    <th style="border:1px solid #ccc; padding:4px; width:48px;">大嫌い</th>
+                                    <th style="border:1px solid #ccc; padding:4px; width:40px;">合計</th>
+                                    <th style="border:1px solid #ccc; padding:4px; width:48px;">嫌い率</th>
+                                    <th style="border:1px solid #ccc; padding:4px; text-align:left;">領域</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topList.length ? topList.map((s, i) => `
+                                    <tr>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center; font-weight:700;">${i + 1}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px;">${s.name}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center;">${s.dislikeCount}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center;">${s.hateCount}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center; font-weight:700;">${s.totalDislikeCount}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center;">${Math.round(s.dislikeRatio)}%</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px;">${getTaskDomainName(s.id)}</td>
+                                    </tr>
+                                `).join('') : `<tr><td colspan="7" style="border:1px solid #ccc; padding:8px; text-align:center;">該当なし</td></tr>`}
+                            </tbody>
+                        </table>
+                        ${disliked.length > topList.length ? `<div style="margin-top:3px; color:#666;">※紙面の都合で上位${topList.length}件のみ掲載（画面では全${disliked.length}件を確認可能）</div>` : ''}
+                    </div>
+
+                    <div style="margin-bottom:8px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#9f1239;">■ 領域別の嫌い票</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                            <thead>
+                                <tr style="background:#eff6ff;">
+                                    <th style="border:1px solid #ccc; padding:4px; text-align:left;">領域</th>
+                                    <th style="border:1px solid #ccc; padding:4px; width:60px;">嫌い票</th>
+                                    <th style="border:1px solid #ccc; padding:4px; width:60px;">嫌い率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topDomains.map(d => `
+                                    <tr>
+                                        <td style="border:1px solid #ccc; padding:3px 4px;">${d.name}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center; font-weight:700;">${d.dislike}</td>
+                                        <td style="border:1px solid #ccc; padding:3px 4px; text-align:center;">${d.rate}%</td>
+                                    </tr>
+                                `).join('') || `<tr><td colspan="3" style="border:1px solid #ccc; padding:8px; text-align:center;">該当なし</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="border-top:1px solid #ddd; padding-top:6px; color:#555; font-size:9px;">
+                        本レポートは「さがせ！時間泥棒」の回答データから、嫌い／大嫌い票のある業務を抽出したものです。今後の業務標準化・DX・勤務改善研究の基礎資料としてご活用ください。
                     </div>
                 </div>
-            `).join('') || `<div class="text-xs text-slate-500">該当なし</div>`;
+            `;
 
-            // Share hints
-            const shares = byDislike
-                .filter(s => s.totalDislikeCount > 0 && s.lovers.length > 0)
-                .slice(0, 5);
-            shareEl.innerHTML = shares.map(s => `
-                <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
-                    <div class="text-sm font-bold text-white truncate">${s.name}</div>
-                    <div class="text-[11px] text-slate-400 mt-0.5">
-                        嫌い: <span class="text-rose-300">${s.haters.slice(0, 3).join('、')}${s.haters.length > 3 ? '…' : ''}</span>
-                        → 得意そう: <span class="text-emerald-300">${s.lovers.slice(0, 3).join('、')}${s.lovers.length > 3 ? '…' : ''}</span>
-                    </div>
-                </div>
-            `).join('') || `<div class="text-xs text-slate-500">いまは分担候補が見つかりません</div>`;
-
-            // Job distribution
-            const jobCounts = {};
-            CHARACTERS.forEach(c => { jobCounts[c.id] = { char: c, users: [] }; });
-            userKeys.forEach(u => {
-                const answered = Object.keys(userResponses[u] || {}).length;
-                if (answered < 10) return; // skip nearly empty
-                const c = calculatePersonalityType(u);
-                if (c && jobCounts[c.id]) jobCounts[c.id].users.push(u);
-            });
-            const jobList = Object.values(jobCounts).filter(j => j.users.length > 0).sort((a, b) => b.users.length - a.users.length);
-            jobsEl.innerHTML = jobList.length ? jobList.map(j => `
-                <div class="p-3 rounded-xl border ${j.char.border} bg-slate-950/60">
-                    <div class="text-sm font-extrabold text-white">${j.char.name} <span class="text-cyan-300 text-xs">${j.users.length}名</span></div>
-                    <div class="text-[11px] text-slate-400 mt-1 truncate" title="${j.users.join('、')}">${j.users.join('、')}</div>
-                </div>
-            `).join('') : `<div class="text-xs text-slate-500 col-span-2">診断できる回答者がいません（各人10問以上回答が目安）</div>`;
+            // 印刷ダイアログで「PDFに保存」を選択
+            setTimeout(() => {
+                window.print();
+            }, 50);
         }
 
         /* MATRIX TABLE DISPLAY */
