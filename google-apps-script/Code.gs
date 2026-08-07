@@ -27,6 +27,36 @@ var LABEL_TO_CODE = {
   '担当外': 'unassigned'
 };
 
+var EXPERIENCE_LABELS = {
+  '1-5': '1〜5年',
+  '6-10': '6〜10年',
+  '11-20': '11〜20年',
+  '21+': '21年以上'
+};
+
+function experienceLabel_(codeOrLabel) {
+  var s = String(codeOrLabel || '').trim();
+  if (!s) return '';
+  if (EXPERIENCE_LABELS[s]) return EXPERIENCE_LABELS[s];
+  // すでに日本語ラベルならそのまま
+  var keys = Object.keys(EXPERIENCE_LABELS);
+  for (var i = 0; i < keys.length; i++) {
+    if (EXPERIENCE_LABELS[keys[i]] === s) return s;
+  }
+  return s;
+}
+
+function experienceCode_(codeOrLabel) {
+  var s = String(codeOrLabel || '').trim();
+  if (!s) return '';
+  if (EXPERIENCE_LABELS[s]) return s;
+  var keys = Object.keys(EXPERIENCE_LABELS);
+  for (var i = 0; i < keys.length; i++) {
+    if (EXPERIENCE_LABELS[keys[i]] === s) return keys[i];
+  }
+  return s;
+}
+
 function doGet(e) {
   try {
     var action = (e && e.parameter && e.parameter.action) || 'ping';
@@ -94,25 +124,33 @@ function exportAll_() {
     exportedAt: new Date().toISOString(),
     respondentCount: Object.keys(responses).length,
     responses: responses,
-    diagnoses: fromRaw.diagnoses || {}
+    diagnoses: fromRaw.diagnoses || {},
+    profiles: fromRaw.profiles || {}
   };
 }
 
 function syncAll_(ss, data) {
   var tasks = normalizeTasks_(data.tasks);
   var responses = data.responses || {};
+  var profiles = data.profiles || {};
   // キー正規化して同一ニックネームをマージ
   var normalized = {};
   var diagnoses = data.diagnoses || {};
   var diagNorm = {};
+  var profileNorm = {};
   Object.keys(responses).forEach(function (user) {
     var key = normalizeNickname_(user);
     if (!key) return;
     normalized[key] = normalizeAnswers_(responses[user] || {});
     if (diagnoses[user]) diagNorm[key] = diagnoses[user];
+    var p = profiles[user] || profiles[key] || {};
+    profileNorm[key] = {
+      experienceYears: experienceCode_(p.experienceYears || p.experienceLabel || ''),
+      experienceLabel: experienceLabel_(p.experienceLabel || p.experienceYears || '')
+    };
   });
-  writeRawSheet_(ss, normalized, diagNorm);
-  writeMatrixSheet_(ss, tasks, normalized, diagNorm);
+  writeRawSheet_(ss, normalized, diagNorm, profileNorm);
+  writeMatrixSheet_(ss, tasks, normalized, diagNorm, profileNorm);
   writeAnswersSheet_(ss, tasks, normalized);
   writeMetaSheet_(ss, data);
 }
@@ -124,9 +162,12 @@ function upsertUser_(ss, data) {
 
   var answers = normalizeAnswers_(data.answers || {});
   var diagnosis = data.diagnosis || {};
+  var experienceYears = experienceCode_(data.experienceYears || data.experienceLabel || '');
+  var experienceLabel = experienceLabel_(data.experienceLabel || data.experienceYears || experienceYears);
+  var profile = { experienceYears: experienceYears, experienceLabel: experienceLabel };
 
-  upsertRawRow_(ss, nickname, answers, diagnosis);
-  upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis);
+  upsertRawRow_(ss, nickname, answers, diagnosis, profile);
+  upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis, profile);
   replaceAnswersForUser_(ss, tasks, nickname, answers);
   writeMetaSheet_(ss, {
     exportedAt: data.exportedAt || new Date().toISOString(),
@@ -146,11 +187,11 @@ function normalizeNickname_(name) {
 }
 
 /** 機械可読な正本シート（分析用にアプリが読み戻す） */
-function writeRawSheet_(ss, responses, diagnoses) {
+function writeRawSheet_(ss, responses, diagnoses, profiles) {
   var sheet = getOrCreateSheet_(ss, '回答データ');
   sheet.clear();
-  sheet.getRange(1, 1, 1, 5).setValues([[
-    '更新日時', '回答者', '回答JSON', '診断タイプ', 'キャッチコピー'
+  sheet.getRange(1, 1, 1, 6).setValues([[
+    '更新日時', '回答者', '経験年数', '回答JSON', '診断タイプ', 'キャッチコピー'
   ]]);
   sheet.setFrozenRows(1);
 
@@ -160,32 +201,51 @@ function writeRawSheet_(ss, responses, diagnoses) {
     var key = normalizeNickname_(user);
     if (!key) return;
     var diag = diagnoses[key] || diagnoses[user] || {};
+    var profile = (profiles && (profiles[key] || profiles[user])) || {};
     rows.push([
       now,
       key,
+      experienceLabel_(profile.experienceLabel || profile.experienceYears || ''),
       JSON.stringify(normalizeAnswers_(responses[user] || {})),
       diag.name || '',
       diag.tagline || ''
     ]);
   });
   if (rows.length > 0) {
-    sheet.getRange(2, 1, rows.length, 5).setValues(rows);
+    sheet.getRange(2, 1, rows.length, 6).setValues(rows);
   }
 }
 
-function upsertRawRow_(ss, nickname, answers, diagnosis) {
-  var sheet = getOrCreateSheet_(ss, '回答データ');
+function ensureRawHeader_(sheet) {
+  var target = ['更新日時', '回答者', '経験年数', '回答JSON', '診断タイプ', 'キャッチコピー'];
   if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, 5).setValues([[
-      '更新日時', '回答者', '回答JSON', '診断タイプ', 'キャッチコピー'
-    ]]);
+    sheet.getRange(1, 1, 1, target.length).setValues([target]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+  var width = Math.max(sheet.getLastColumn(), target.length);
+  var header = sheet.getRange(1, 1, 1, width).getValues()[0].map(function (v) { return String(v || ''); });
+  // 旧形式（経験年数なし）→ 列を挿入して移行
+  if (header[2] !== '経験年数') {
+    if (header[2] === '回答JSON') {
+      sheet.insertColumnAfter(2);
+      sheet.getRange(1, 3).setValue('経験年数');
+    } else {
+      sheet.getRange(1, 1, 1, target.length).setValues([target]);
+    }
     sheet.setFrozenRows(1);
   }
+}
+
+function upsertRawRow_(ss, nickname, answers, diagnosis, profile) {
+  var sheet = getOrCreateSheet_(ss, '回答データ');
+  ensureRawHeader_(sheet);
 
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss');
   var row = [
     now,
     nickname,
+    experienceLabel_((profile && (profile.experienceLabel || profile.experienceYears)) || ''),
     JSON.stringify(normalizeAnswers_(answers)),
     (diagnosis && diagnosis.name) || '',
     (diagnosis && diagnosis.tagline) || ''
@@ -193,8 +253,7 @@ function upsertRawRow_(ss, nickname, answers, diagnosis) {
 
   var matchRows = findNicknameRows_(sheet, 2, nickname); // 1-based sheet rows
   if (matchRows.length > 0) {
-    // 先頭を上書き、残りは下から削除
-    sheet.getRange(matchRows[0], 1, 1, 5).setValues([row]);
+    sheet.getRange(matchRows[0], 1, 1, 6).setValues([row]);
     for (var d = matchRows.length - 1; d >= 1; d--) {
       sheet.deleteRow(matchRows[d]);
     }
@@ -205,14 +264,21 @@ function upsertRawRow_(ss, nickname, answers, diagnosis) {
 
 function readRawResponses_(ss) {
   var sheet = ss.getSheetByName('回答データ');
-  var result = { responses: {}, diagnoses: {} };
+  var result = { responses: {}, diagnoses: {}, profiles: {} };
   if (!sheet || sheet.getLastRow() < 2) return result;
 
   var values = sheet.getDataRange().getValues();
+  var header = values[0].map(function (v) { return String(v || ''); });
+  var hasExperience = header[2] === '経験年数';
+  var jsonCol = hasExperience ? 3 : 2;
+  var diagNameCol = hasExperience ? 4 : 3;
+  var diagTagCol = hasExperience ? 5 : 4;
+  var expCol = hasExperience ? 2 : -1;
+
   for (var r = 1; r < values.length; r++) {
     var nickname = normalizeNickname_(values[r][1]);
     if (!nickname) continue;
-    var jsonText = values[r][2];
+    var jsonText = values[r][jsonCol];
     try {
       var parsed = typeof jsonText === 'string' ? JSON.parse(jsonText) : (jsonText || {});
       // 後勝ち（最新行を優先）
@@ -221,9 +287,16 @@ function readRawResponses_(ss) {
       result.responses[nickname] = {};
     }
     result.diagnoses[nickname] = {
-      name: String(values[r][3] || ''),
-      tagline: String(values[r][4] || '')
+      name: String(values[r][diagNameCol] || ''),
+      tagline: String(values[r][diagTagCol] || '')
     };
+    if (expCol >= 0) {
+      var expLabel = String(values[r][expCol] || '').trim();
+      result.profiles[nickname] = {
+        experienceYears: experienceCode_(expLabel),
+        experienceLabel: experienceLabel_(expLabel)
+      };
+    }
   }
   return result;
 }
@@ -236,7 +309,7 @@ function readMatrixResponses_(ss) {
   var values = sheet.getDataRange().getValues();
   var header = values[0];
   var taskCols = [];
-  for (var c = 4; c < header.length; c++) {
+  for (var c = 0; c < header.length; c++) {
     var h = String(header[c] || '');
     var m = h.match(/^(\d+)_/);
     if (m) taskCols.push({ col: c, id: Number(m[1]) });
@@ -256,11 +329,11 @@ function readMatrixResponses_(ss) {
   return responses;
 }
 
-function writeMatrixSheet_(ss, tasks, responses, diagnoses) {
+function writeMatrixSheet_(ss, tasks, responses, diagnoses, profiles) {
   var sheet = getOrCreateSheet_(ss, 'マトリクス');
   sheet.clear();
 
-  var header = ['更新日時', '回答者', '診断タイプ', 'キャッチコピー'];
+  var header = ['更新日時', '回答者', '経験年数', '診断タイプ', 'キャッチコピー'];
   tasks.forEach(function (t) {
     header.push(t.id + '_' + t.name);
   });
@@ -275,7 +348,14 @@ function writeMatrixSheet_(ss, tasks, responses, diagnoses) {
     var key = normalizeNickname_(user);
     var answers = responses[user] || {};
     var diag = diagnoses[key] || diagnoses[user] || {};
-    var row = [now, key, diag.name || '', diag.tagline || ''];
+    var profile = (profiles && (profiles[key] || profiles[user])) || {};
+    var row = [
+      now,
+      key,
+      experienceLabel_(profile.experienceLabel || profile.experienceYears || ''),
+      diag.name || '',
+      diag.tagline || ''
+    ];
     tasks.forEach(function (t) {
       var val = answers[String(t.id)] != null ? answers[String(t.id)] : answers[t.id];
       row.push(labelChoice_(val));
@@ -286,7 +366,7 @@ function writeMatrixSheet_(ss, tasks, responses, diagnoses) {
   sheet.getRange(2, 1, rows.length, header.length).setValues(rows);
 }
 
-function upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis) {
+function upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis, profile) {
   var sheet = getOrCreateSheet_(ss, 'マトリクス');
   ensureMatrixHeader_(sheet, tasks);
 
@@ -294,6 +374,7 @@ function upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis) {
   var row = [
     now,
     nickname,
+    experienceLabel_((profile && (profile.experienceLabel || profile.experienceYears)) || ''),
     (diagnosis && diagnosis.name) || '',
     (diagnosis && diagnosis.tagline) || ''
   ];
@@ -314,7 +395,7 @@ function upsertMatrixRow_(ss, tasks, nickname, answers, diagnosis) {
 }
 
 function ensureMatrixHeader_(sheet, tasks) {
-  var header = ['更新日時', '回答者', '診断タイプ', 'キャッチコピー'];
+  var header = ['更新日時', '回答者', '経験年数', '診断タイプ', 'キャッチコピー'];
   tasks.forEach(function (t) {
     header.push(t.id + '_' + t.name);
   });
@@ -335,6 +416,13 @@ function ensureMatrixHeader_(sheet, tasks) {
     }
   }
   if (needRewrite) {
+    // 旧ヘッダーなら経験年数列を挿入
+    if (String(existing[2] || '') !== '経験年数' && String(existing[2] || '').indexOf('_') === -1) {
+      // existing[2] が診断タイプなどの場合
+      if (String(existing[2] || '') === '診断タイプ') {
+        sheet.insertColumnAfter(2);
+      }
+    }
     sheet.getRange(1, 1, 1, header.length).setValues([header]);
     sheet.setFrozenRows(1);
   }

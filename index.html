@@ -267,13 +267,14 @@
                 </div>
 
                 <div class="flex items-center space-x-2 sm:space-x-3">
-                    <div class="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-white/70 border border-[#D4BC94]/40 max-w-[7.5rem] sm:max-w-[12rem]">
+                    <div class="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-white/70 border border-[#D4BC94]/40 max-w-[10rem] sm:max-w-[14rem]">
                         <div class="w-7 h-7 rounded-full bg-[#F4F6F9] text-[#B8956C] flex items-center justify-center border border-[#D4BC94]/50 shrink-0">
                             <i class="fa-solid fa-moon text-xs"></i>
                         </div>
                         <div class="min-w-0">
                             <div class="text-[9px] text-[#8FA3B5] font-bold tracking-wider font-game leading-none hidden sm:block">ニックネーム</div>
                             <div id="current-nickname-display" class="font-bold text-[#2A3644] text-xs sm:text-sm truncate leading-tight">ゲスト</div>
+                            <div id="current-experience-display" class="text-[10px] text-[#8A97A5] truncate leading-tight"></div>
                         </div>
                     </div>
 
@@ -819,7 +820,7 @@
 
     <!-- OVERLAY 1: WELCOME / PLAYER SELECT MODAL -->
     <div id="modal-nickname" class="fixed inset-0 bg-[#2A3644]/35 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="game-panel game-panel-glow max-w-sm w-full p-7 relative animate-modal my-auto text-center space-y-5">
+        <div class="game-panel game-panel-glow max-w-md w-full p-7 relative animate-modal my-auto text-center space-y-5">
             
             <div class="w-16 h-16 mx-auto bg-gradient-to-br from-[#F8F6F3] via-[#E8EEF4] to-[#D4DEE9] text-[#B8956C] rounded-full flex items-center justify-center text-3xl border border-[#D4BC94]/60 moon-float">
                 <i class="fa-solid fa-moon"></i>
@@ -835,12 +836,36 @@
                 </p>
             </div>
 
-            <div class="space-y-2 text-left">
-                <label for="input-init-nickname" class="text-xs font-bold text-[#5C6B7A] tracking-wider block font-game">
-                    ニックネーム
-                </label>
-                <div class="relative">
+            <div class="space-y-4 text-left">
+                <div class="space-y-2">
+                    <label for="input-init-nickname" class="text-xs font-bold text-[#5C6B7A] tracking-wider block font-game">
+                        ニックネーム
+                    </label>
                     <input type="text" id="input-init-nickname" placeholder="例: 匿名事務官A" class="w-full oracle-input rounded-xl px-3.5 py-2.5 text-sm font-bold transition">
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-[#5C6B7A] tracking-wider block font-game">
+                        事務職員としての経験年数
+                    </span>
+                    <div id="experience-years-options" class="grid grid-cols-1 gap-2">
+                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[#D4BC94]/45 bg-white/70 cursor-pointer hover:border-[#B8956C] transition">
+                            <input type="radio" name="experience-years" value="1-5" class="accent-[#B8956C]">
+                            <span class="text-sm font-bold text-[#2A3644]">1〜5年</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[#D4BC94]/45 bg-white/70 cursor-pointer hover:border-[#B8956C] transition">
+                            <input type="radio" name="experience-years" value="6-10" class="accent-[#B8956C]">
+                            <span class="text-sm font-bold text-[#2A3644]">6〜10年</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[#D4BC94]/45 bg-white/70 cursor-pointer hover:border-[#B8956C] transition">
+                            <input type="radio" name="experience-years" value="11-20" class="accent-[#B8956C]">
+                            <span class="text-sm font-bold text-[#2A3644]">11〜20年</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[#D4BC94]/45 bg-white/70 cursor-pointer hover:border-[#B8956C] transition">
+                            <input type="radio" name="experience-years" value="21+" class="accent-[#B8956C]">
+                            <span class="text-sm font-bold text-[#2A3644]">21年以上</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -849,7 +874,7 @@
                 <i class="fa-solid fa-sparkles text-xs"></i>
             </button>
 
-            <p class="text-[11px] text-[#8A97A5]">ニックネームを入れて、一人ずつ回答できます</p>
+            <p class="text-[11px] text-[#8A97A5]">ニックネームと経験年数を入れて回答を始めます</p>
         </div>
     </div>
 
@@ -1054,7 +1079,21 @@
     <script>
         /* APP STATE VARIABLES */
         let currentNickname = "ゲスト回答者";
+        let currentExperienceYears = ""; // '1-5' | '6-10' | '11-20' | '21+'
         let userResponses = {}; // Structure: { "ニックネーム": { 1: "like", 2: "dislike" ... } }
+        let userProfiles = {}; // { "ニックネーム": { experienceYears: "1-5" } }
+
+        const EXPERIENCE_YEARS_OPTIONS = [
+            { value: "1-5", label: "1〜5年" },
+            { value: "6-10", label: "6〜10年" },
+            { value: "11-20", label: "11〜20年" },
+            { value: "21+", label: "21年以上" }
+        ];
+
+        function experienceYearsLabel(code) {
+            const hit = EXPERIENCE_YEARS_OPTIONS.find(o => o.value === code);
+            return hit ? hit.label : "";
+        }
         let currentSortMode = "dislike"; // 'dislike' | 'like'
         let currentSurveyMode = "deck"; // 'deck' or 'list'
         let currentDeckIndex = 0; // 0 to 49
@@ -1375,6 +1414,7 @@
             Object.keys(userResponses).forEach((user) => {
                 if (isLocalAnswersComplete(userResponses[user])) {
                     delete userResponses[user];
+                    delete userProfiles[user];
                     removed = true;
                 }
             });
@@ -1383,8 +1423,14 @@
 
         function clearLocalUserAnswers(nickname) {
             const user = normalizeNickname(nickname || currentNickname);
-            if (user) delete userResponses[user];
-            if (nickname) delete userResponses[nickname];
+            if (user) {
+                delete userResponses[user];
+                delete userProfiles[user];
+            }
+            if (nickname) {
+                delete userResponses[nickname];
+                delete userProfiles[nickname];
+            }
             if (!userResponses[currentNickname]) {
                 userResponses[currentNickname] = {};
             }
@@ -1398,15 +1444,25 @@
             try {
                 // 完了済み(50問)は端末に残さない。途中回答だけ保存する。
                 const persistable = {};
+                const persistProfiles = {};
                 Object.keys(userResponses).forEach((user) => {
                     if (!isLocalAnswersComplete(userResponses[user])) {
                         persistable[user] = userResponses[user];
+                        if (userProfiles[user]) persistProfiles[user] = userProfiles[user];
+                    }
+                });
+                // 未回答でもプロフィール（経験年数）は保持
+                Object.keys(userProfiles).forEach((user) => {
+                    if (!persistProfiles[user] && userProfiles[user] && !isLocalAnswersComplete(userResponses[user])) {
+                        persistProfiles[user] = userProfiles[user];
                     }
                 });
                 const data = {
                     tasks: TASKS,
                     responses: persistable,
-                    currentNickname: currentNickname
+                    profiles: persistProfiles,
+                    currentNickname: currentNickname,
+                    currentExperienceYears: currentExperienceYears
                 };
                 localStorage.setItem('school_office_time_thief_data_v1', JSON.stringify(data));
             } catch (e) {
@@ -1472,7 +1528,9 @@
                         TASKS = parsed.tasks;
                     }
                     if (parsed.responses) userResponses = parsed.responses;
+                    if (parsed.profiles) userProfiles = parsed.profiles;
                     if (parsed.currentNickname) currentNickname = parsed.currentNickname;
+                    if (parsed.currentExperienceYears) currentExperienceYears = parsed.currentExperienceYears;
                 }
             } catch (e) {
                 console.error("Failed to load data:", e);
@@ -1484,7 +1542,9 @@
                     localStorage.setItem('school_office_time_thief_data_v1', JSON.stringify({
                         tasks: TASKS,
                         responses: userResponses,
-                        currentNickname: currentNickname
+                        profiles: userProfiles,
+                        currentNickname: currentNickname,
+                        currentExperienceYears: currentExperienceYears
                     }));
                 } catch (e) { /* ignore */ }
             }
@@ -1494,12 +1554,19 @@
             if (!userResponses[currentNickname]) {
                 userResponses[currentNickname] = {};
             }
+            if (userProfiles[currentNickname]?.experienceYears && !currentExperienceYears) {
+                currentExperienceYears = userProfiles[currentNickname].experienceYears;
+            }
             loadGoogleSheetsUrl();
         }
 
         /* NICKNAME & WELCOME MODAL LOGIC */
         function openNicknameModal() {
             document.getElementById('input-init-nickname').value = currentNickname === "ゲスト回答者" ? "" : currentNickname;
+            const selected = currentExperienceYears || userProfiles[currentNickname]?.experienceYears || "";
+            document.querySelectorAll('input[name="experience-years"]').forEach((el) => {
+                el.checked = el.value === selected;
+            });
             document.getElementById('modal-nickname').classList.remove('hidden');
         }
 
@@ -1509,11 +1576,21 @@
                 alert("ニックネーム（匿名可）を入力してください");
                 return;
             }
+            const yearsEl = document.querySelector('input[name="experience-years"]:checked');
+            if (!yearsEl) {
+                alert("事務職員としての経験年数を選択してください");
+                return;
+            }
 
             currentNickname = inputName;
+            currentExperienceYears = yearsEl.value;
             if (!userResponses[currentNickname]) {
                 userResponses[currentNickname] = {};
             }
+            userProfiles[currentNickname] = {
+                ...(userProfiles[currentNickname] || {}),
+                experienceYears: currentExperienceYears
+            };
 
             saveDataToStorage();
             updateNicknameDisplay();
@@ -1564,6 +1641,11 @@
 
         function updateNicknameDisplay() {
             document.getElementById('current-nickname-display').textContent = currentNickname;
+            const expEl = document.getElementById('current-experience-display');
+            if (expEl) {
+                const code = currentExperienceYears || userProfiles[currentNickname]?.experienceYears || "";
+                expEl.textContent = code ? `経験 ${experienceYearsLabel(code)}` : "";
+            }
         }
 
         /* SURVEY MODE SWITCHING */
@@ -1879,6 +1961,9 @@
                     <div class="space-y-1 text-center sm:text-left flex-grow">
                         <span class="text-xs font-bold text-[#B8956C] font-game tracking-wider">
                             ニックネーム: 「${currentNickname}」
+                            ${(currentExperienceYears || userProfiles[currentNickname]?.experienceYears)
+                                ? ` ／ 経験 ${experienceYearsLabel(currentExperienceYears || userProfiles[currentNickname]?.experienceYears)}`
+                                : ''}
                         </span>
                         <h3 class="text-2xl font-black text-[#2A3644]">
                             ${character.name}
@@ -2789,6 +2874,7 @@
                 exportedAt: new Date().toISOString(),
                 tasks: TASKS,
                 responses: userResponses,
+                profiles: userProfiles,
                 diagnoses: buildDiagnosesMap()
             };
             return postToGoogleSheets(payload, options);
@@ -2815,6 +2901,8 @@
                 nickname: user,
                 answers: normalized,
                 tasks: TASKS,
+                experienceYears: (userProfiles[user] || userProfiles[nickname || currentNickname] || {}).experienceYears || currentExperienceYears || "",
+                experienceLabel: experienceYearsLabel((userProfiles[user] || {}).experienceYears || currentExperienceYears || ""),
                 diagnosis: char ? { id: char.id, name: char.name, tagline: char.tagline } : {}
             };
             return postToGoogleSheets(payload, options);
@@ -2883,7 +2971,9 @@
                 },
                 tasks: TASKS,
                 responses: userResponses,
-                currentNickname: currentNickname
+                profiles: userProfiles,
+                currentNickname: currentNickname,
+                currentExperienceYears: currentExperienceYears
             };
 
             const dateStamp = new Date().toISOString().slice(0, 10);
@@ -2934,6 +3024,7 @@
 
                     if (modeReplace) {
                         userResponses = {};
+                        userProfiles = {};
                         Object.entries(data.responses).forEach(([user, answers]) => {
                             if (answers && typeof answers === "object") {
                                 userResponses[user] = { ...answers };
@@ -2944,6 +3035,18 @@
                             if (!answers || typeof answers !== "object") return;
                             userResponses[user] = { ...(userResponses[user] || {}), ...answers };
                         });
+                    }
+
+                    if (data.profiles && typeof data.profiles === "object") {
+                        if (modeReplace) userProfiles = {};
+                        Object.entries(data.profiles).forEach(([user, profile]) => {
+                            if (!profile || typeof profile !== "object") return;
+                            userProfiles[user] = { ...(userProfiles[user] || {}), ...profile };
+                        });
+                    }
+
+                    if (data.currentExperienceYears) {
+                        currentExperienceYears = data.currentExperienceYears;
                     }
 
                     if (data.currentNickname && userResponses[data.currentNickname]) {
@@ -3031,7 +3134,9 @@
                 localStorage.removeItem('school_office_time_thief_data_v1');
                 TASKS = JSON.parse(JSON.stringify(DEFAULT_TASKS));
                 userResponses = {};
+                userProfiles = {};
                 currentNickname = "ゲスト回答者";
+                currentExperienceYears = "";
                 currentDeckIndex = 0;
 
                 userResponses[currentNickname] = {};
