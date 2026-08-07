@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>さがせ！時間泥棒 - 学校事務 業務診断QUEST</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: VT323 & Press Start 2P for Arcade vibe + Noto Sans JP -->
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Noto+Sans+JP:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            user-select: none;
+            background-color: #0B0F19;
+            color: #F1F5F9;
+        }
+
+        .font-game {
+            font-family: 'Chakra Petch', 'Press Start 2P', sans-serif;
+        }
+
+        /* Neon & Gaming Glass UI Tokens */
+        .game-panel {
+            background: linear-gradient(135deg, rgba(20, 27, 45, 0.95) 0%, rgba(13, 18, 30, 0.98) 100%);
+            border: 2px solid #2A3655;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+        }
+
+        .game-panel-glow {
+            border-color: #3B82F6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), inset 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Arcade 3D Buttons */
+        .btn-arcade {
+            position: relative;
+            transition: all 0.1s ease;
+            box-shadow: 0 6px 0 var(--btn-shadow-color), 0 10px 20px rgba(0,0,0,0.4);
+            transform: translateY(0);
+        }
+        .btn-arcade:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 var(--btn-shadow-color), 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .btn-like {
+            --btn-shadow-color: #047857;
+            background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+            border: 2px solid #34D399;
+        }
+        .btn-love {
+            --btn-shadow-color: #831843;
+            background: linear-gradient(180deg, #EC4899 0%, #DB2777 100%);
+            border: 2px solid #F472B6;
+        }
+        .btn-neutral {
+            --btn-shadow-color: #1E3A8A;
+            background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
+            border: 2px solid #60A5FA;
+        }
+        .btn-dislike {
+            --btn-shadow-color: #9A3412;
+            background: linear-gradient(180deg, #F97316 0%, #EA580C 100%);
+            border: 2px solid #FB923C;
+        }
+        .btn-hate {
+            --btn-shadow-color: #881337;
+            background: linear-gradient(180deg, #E11D48 0%, #BE123C 100%);
+            border: 2px solid #FB7185;
+        }
+        .btn-none {
+            --btn-shadow-color: #334155;
+            background: linear-gradient(180deg, #64748B 0%, #475569 100%);
+            border: 2px solid #94A3B8;
+        }
+
+        /* Card Slide Transitions */
+        .card-enter {
+            animation: cardGamePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .card-exit-left {
+            animation: cardGameOutLeft 0.22s ease-in forwards;
+        }
+        .card-exit-right {
+            animation: cardGameOutRight 0.22s ease-in forwards;
+        }
+
+        @keyframes cardGamePop {
+            0% {
+                opacity: 0;
+                transform: scale(0.85) translateY(30px) rotate(-2deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0) rotate(0deg);
+            }
+        }
+
+        @keyframes cardGameOutLeft {
+            to {
+                opacity: 0;
+                transform: translateX(-140px) rotate(-12deg) scale(0.9);
+            }
+        }
+
+        @keyframes cardGameOutRight {
+            to {
+                opacity: 0;
+                transform: translateX(140px) rotate(12deg) scale(0.9);
+            }
+        }
+
+        /* Toast Speech Bubble Animation */
+        @keyframes toastBubble {
+            0% { opacity: 0; transform: translateY(-12px) scale(0.9); }
+            15% { opacity: 1; transform: translateY(0) scale(1.05); }
+            85% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+        }
+        .toast-anim {
+            animation: toastBubble 1.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Big Countdown Zoom */
+        @keyframes countZoom {
+            0% { transform: scale(0.2); opacity: 0; filter: blur(10px); }
+            50% { transform: scale(1.25); opacity: 1; filter: blur(0); }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .count-zoom-anim {
+            animation: countZoom 0.85s ease-out forwards;
+        }
+
+        /* Modal Animation */
+        @keyframes modalPop {
+            0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .animate-modal {
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0F172A;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748B;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-[#070A12] text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+    <!-- Game HUD Header Bar -->
+    <header class="bg-[#0D1322]/90 border-b-2 border-indigo-500/40 sticky top-0 z-40 backdrop-blur-md shadow-lg shadow-indigo-950/50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Game Logo Header -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('survey')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/40 border border-indigo-400/50">
+                        <i class="fa-solid fa-[#fa-gamepad] fa-stopwatch text-lg animate-pulse"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="font-black text-white text-base sm:text-lg tracking-wider font-game bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-indigo-300 to-pink-400">
+                                さがせ！時間泥棒
+                            </h1>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-950 border border-indigo-500/50 text-indigo-300 font-game">QUEST</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium hidden sm:block">学校事務 業務標準化 ＆ 8タイプジョブ診断</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Action Tabs -->
+                <div class="flex items-center space-x-2">
+                    <nav class="flex space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+                        <button id="nav-survey" onclick="switchTab('survey')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-crosshairs text-cyan-300"></i>
+                            <span>調査</span>
+                        </button>
+                        <button id="nav-ranking" onclick="switchTab('ranking')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-trophy text-amber-400"></i>
+                            <span>ランキング</span>
+                        </button>
+                        <button id="nav-matrix" onclick="switchTab('matrix')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-chart-grid text-emerald-400"></i>
+                            <span class="hidden sm:inline">8人マトリクス</span>
+                        </button>
+                    </nav>
+
+                    <!-- Admin Gear Button -->
+                    <button onclick="openAdminModal()" title="業務項目カスタマイズ" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition border border-slate-800 flex items-center justify-center">
+                        <i class="fa-solid fa-sliders text-sm"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <script>
+        /* 50 SCHOOL ADMINISTRATION TASKS DEFAULT DATABASE */
+        const DEFAULT_TASKS = [
+            { id: 1, name: "年末調整", desc: "扶養控除申告書・保険料控除等の回収、システム入力、控え確認" },
+            { id: 2, name: "通勤手当手続", desc: "通勤経路・運賃・マイカー距離の確認、認定、システム登録" },
+            { id: 3, name: "住居・扶養等諸手当手続", desc: "賃貸契約書や戸籍等の要件書類確認、届出作成、受給資格審査" },
+            { id: 4, name: "旅費・出張精算", desc: "出張命令の確認、旅費・交通費計算、請求手続・振込処理" },
+            { id: 5, name: "教職員の出勤簿・勤怠管理", desc: "毎月の出勤簿照合、病気休暇・特別休暇等の申請入力・承認確認" },
+            { id: 6, name: "時間外勤務（残業）管理", desc: "時間外勤務命令書・実績の集計、システム入力、手当算出確認" },
+            { id: 7, name: "非常勤教職員の任用・給与事務", desc: "部活動指導員・サポートスタッフ等の契約書作成、勤務実績確認、給与処理" },
+            { id: 8, name: "産休・育休・復職事務", desc: "産休・育休の申請書類作成、手当金請求、復職時の手続き" },
+            { id: 9, name: "教員免許更新・管理事務", desc: "教員免許状の所持・有効期限の把握、提出書類の取りまとめ" },
+            { id: 10, name: "人事評価票取りまとめ", desc: "期首・期末の自己評価票配布・回収、提出状況管理" },
+            { id: 11, name: "定期健康診断関係事務", desc: "教職員の検診実施手配、各種問診票配布、受診状況の取りまとめ" },
+            { id: 12, name: "教職員の異動・退職手続", desc: "異動届の作成、事務引継書の確認、退職手続書類作成" },
+            { id: 13, name: "学校予算配分・執行計画", desc: "各学年・教科の要求まとめ、予算配分表作成、執行予定管理" },
+            { id: 14, name: "日常の物品発注・納品検収", desc: "教員からの購入依頼受付、見積取寄、発注、届いた物品の検収" },
+            { id: 15, name: "公費支出負担行為・支払手続", desc: "請求書の点検・照合、会計システム入力、支払命令手続" },
+            { id: 16, name: "光熱水費等の公費支払管理", desc: "電気・ガス・水道・電話料金等の検針票確認、予算執行処理" },
+            { id: 17, name: "予算執行状況の分析・報告", desc: "残高の把握、各学年・部局への執行状況通知、補正の検討" },
+            { id: 18, name: "各種公費補助金・交付金申請", desc: "指定事業や特別予算の申請書作成、予算受入処理" },
+            { id: 19, name: "補助金・交付金の実績報告・精算", desc: "事業終了時の領収書整理、実績報告書作成、余剰金返還手続" },
+            { id: 20, name: "公費決算事務", desc: "年度末の執行最終確認、各種帳簿と決算書の一致確認、報告書提出" },
+            { id: 21, name: "私費徴収金・積立金の額決定事務", desc: "教材費・修学旅行費・PTA会費等の年間徴収計画・振込額の設定" },
+            { id: 22, name: "口座振替データの作成・伝送", desc: "各生徒の徴収金額設定、銀行用引き落としデータの作成・送信" },
+            { id: 23, name: "口座振替結果の確認・入金処理", desc: "振替不能者の抽出、入金確認、会計ソフト・帳簿への記帳" },
+            { id: 24, name: "私費未納者への催促・対応", desc: "未納一覧作成、未納通知書発行、教頭・担任と連携した催促・相談受付" },
+            { id: 25, name: "就学援助費の申請・受給資格確認", desc: "保護者からの申請書受付、支給対象者の要件確認、教育委員会への送付" },
+            { id: 26, name: "就学援助費の支給・口座振込事務", desc: "支給確定データの照合、保護者口座への振込依頼、領収書管理" },
+            { id: 27, name: "特別支援教育就学奨励費の手続", desc: "収入・支出実績の集計、申請書類のとりまとめ、支給決定処理" },
+            { id: 28, name: "学校給食費の徴収・公会計化連携", desc: "給食費の集金・未納管理、または自治体公会計化に伴う登録データ調整" },
+            { id: 29, name: "私費会計の決算・監査対応", desc: "学期末・年度末の決算書作成、保護者・監査役への報告書類設営" },
+            { id: 30, name: "返金事務（修学旅行等）", desc: "差額計算、保護者口座への返金データ作成、払戻確認" },
+            { id: 31, name: "備品台帳登録・管理", desc: "取得した備品の品名・価格の登録、備品シールの貼付、配置場所把握" },
+            { id: 32, name: "不用備品の廃棄手続", desc: "耐用年数経過・破損備品の抽出、廃棄調書作成、教育委員会手続き" },
+            { id: 33, name: "施設・設備の定期点検窓口", desc: "消防設備、エレベーター、電気設備等の点検日程調整・業者立ち会い" },
+            { id: 34, name: "施設・設備の破損修繕事務", desc: "校内修繕要求の受付、業者見積依頼、発注・修理完了確認" },
+            { id: 35, name: "環境衛生・委託業務の履行確認", desc: "清掃・警備・害虫駆除等の契約内容確認、作業報告書の受領・確認" },
+            { id: 36, name: "公印管理・押印対応", desc: "公印使用申請の受領、公印台帳への記帳、公印保管" },
+            { id: 37, name: "収受公文書の受付・配布", desc: "郵送物・収受文書の開封、受付印捺印、担当部署・教員への配布" },
+            { id: 38, name: "発送文書の管理", desc: "外部への提出・郵送文書の記録、料金後納・切手管理、投函" },
+            { id: 39, name: "公文書の保存・ファイリング", desc: "年度末の文書整理、保存年限別のバインダー管理、保存庫移動" },
+            { id: 40, name: "保存期間満了文書の破棄手続", desc: "保存年限が切れた文書の抽出、破棄申請作成、業者裁断手配" },
+            { id: 41, name: "新入生の学籍作成事務", desc: "入学者名簿の整理、学籍番号割り振り、指導要録・出席簿のベースデータ作成" },
+            { id: 42, name: "転出入（転校）事務", desc: "在学証明書・教科書給与証明書の発行、転出入者名簿の更新、要録送付手続" },
+            { id: 43, name: "各種証明書の発行（在校生・卒業生）", desc: "在学証明書、卒業証明書、成績証明書等の受付・作成・交付" },
+            { id: 44, name: "スポーツ振興センター（災害給付）申請", desc: "学校事故・怪我の報告書受付、医療費請求書作成、申請" },
+            { id: 45, name: "奨学金・就学支援金の手続", desc: "高校等の申請案内作成、保護者からの申請書類回収、要件チェック・申請" },
+            { id: 46, name: "学校施設の対外貸出（社会開放）手続", desc: "体育館・グラウンドの利用申請受付、鍵の貸出、使用料徴収" },
+            { id: 47, name: "教育委員会・外部からの照会回答", desc: "児童生徒数調査、統計調査、実態アンケート等の入力・とりまとめ" },
+            { id: 48, name: "教職員用ICT端末・ID管理", desc: "着任教職員への端末貸与・アカウント作成、離任時の回収・削除処理" },
+            { id: 49, name: "学校評価・保護者アンケート集計", desc: "アンケート用紙の配布・回収、Web回答データの抽出、集計表作成" },
+            { id: 50, name: "窓口・電話の一次対応", desc: "来客の受付・応接案内、電話取り次ぎ、保護者・業者等の一次応対" }
+        ];
+
+        let TASKS = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+
+        /* 5 PRAISE MESSAGES FOR "LOVE" */
+        const LOVE_PRAISES = [
+            "凄すぎる！その業務が大好きなのはまさに神の領域です天職✨",
+            "大好きと言える圧倒的プロ意識！学校の救世主です💖",
+            "素晴らしい！その業務への愛が学校を支えています🎉",
+            "超絶マスター！他の教職員からも感謝の嵐です✨",
+            "大得意＆大好きな業務！事務室の頼れる超エース🌟"
+        ];
+
+        /* 5 PRAISE MESSAGES FOR "LIKE" */
+        const LIKE_PRAISES = [
+            "素晴らしい！その業務が得意なのは大いなる武器です✨",
+            "得意を極める姿、まさにプロフェッショナル！👏",
+            "手際が良いですね！学校を支えるキーパーソン🌟",
+            "得意業務があると全体の展開スピードが一気に上がります！🎉",
+            "完璧な手際！まわりの教職員も助かっています✨"
+        ];
+
+        /* 5 MESSAGES FOR "NEUTRAL" */
+        const NEUTRAL_MESSAGES = [
+            "淡々とこなせる安定感！それが一番の強みです👍",
+            "普通にこなせる標準力、学校事務の素晴らしい土台です🌿",
+            "落ち着いた手際でクリア！順調そのものですね☕️",
+            "ルーティンをブレずにこなす頼もしさ！さすがです✨",
+            "安定した処理能力！いつもスムーズで助かります😊"
+        ];
+
+        /* 5 ENCOURAGEMENT MESSAGES FOR "DISLIKE" */
+        const DISLIKE_ENCOURAGEMENTS = [
+            "苦手な時間泥棒業務も確実にこなして本当に偉すぎます！💪",
+            "手間がかかりますよね…いつも本当にお疲れ様です☕️",
+            "嫌いな作業も黙々とクリアする姿勢、頭が下がります✨",
+            "無理せず自分のペースで攻略していきましょうね！🌿",
+            "大変な泥棒業務を退治してくれてありがとうございます！🙏"
+        ];
+
+        /* 5 ENCOURAGEMENT MESSAGES FOR "HATE" */
+        const HATE_ENCOURAGEMENTS = [
+            "大嫌いな超時間泥棒業務を耐え抜くあなたに心から敬意を！！😭🏆",
+            "本当に大変でストレスが溜まる業務ですよね…よくぞやってくれました！✨",
+            "大嫌いでも学校のために立ち向かう姿、まさに勇者です！🛡️",
+            "泥棒業務のラスボス退治お見事！本当にお疲れ様です！！💥",
+            "無理は禁物ですよ！この大変さをみんなで共有して改善していきましょう💪"
+        ];
+
+        /* 8 PERSONALITY CHARACTERS DATABASE (RPG JOB CARDS) */
+        const CHARACTERS = [
+            {
+                id: "financial_guardian",
+                name: "金の番人",
+                tagline: "1円の狂いも許さない！堅実と信頼の財政パラディン",
+                color: "from-amber-500 to-yellow-600",
+                border: "border-amber-400",
+                badgeBg: "bg-amber-950 text-amber-300 border-amber-700",
+                traits: ["数字の整合性に強い", "決算がぴったり合うと快感", "予算執行の残高管理が完璧"],
+                desc: "予算管理や決算会計業務を得意とするあなたは「金の番人」。1円の誤差も見逃さない緻密な計算力と論理的思考を持ち、学校の財政的信頼を支えます。",
+                matchTask: "公費決算・物品発注・予算配分"
+            },
+            {
+                id: "benevolent_mother",
+                name: "認定の母",
+                tagline: "困った保護者・生徒を包み込む慈愛のヒーラー",
+                color: "from-pink-500 to-rose-600",
+                border: "border-pink-400",
+                badgeBg: "bg-pink-950 text-pink-300 border-pink-700",
+                traits: ["保護者の相談に丁寧に対応", "複雑な受給要件を優しく整理", "支援の決定にやりがいを感じる"],
+                desc: "就学援助や奨学金などの手続に親身に取り組むあなたは「認定の母」。制度の狭間で悩む家庭に寄り添い、必要な支援を確実に届ける頼れるバランサーです。",
+                matchTask: "就学援助・奨学金・就学奨励費"
+            },
+            {
+                id: "labor_strategist",
+                name: "労務の司令塔",
+                tagline: "教職員の労働環境を陰から統括する戦略家",
+                color: "from-indigo-500 to-blue-600",
+                border: "border-indigo-400",
+                badgeBg: "bg-indigo-950 text-indigo-300 border-indigo-700",
+                traits: ["年末調整の確認手際が早い", "手当や出張規程を熟知", "勤怠管理のルールに厳格"],
+                desc: "人事・給与・勤怠手続が得意なあなたは「労務の司令塔」。教職員の複雑な権利や手当を正しく把握し、スムーズな学校運営の土台を静かに固めます。",
+                matchTask: "年末調整・旅費精算・通勤手当"
+            },
+            {
+                id: "castle_repairer",
+                name: "城の修繕士",
+                tagline: "学校のピンチを即解決！フットワーク軽快な現場のナイト",
+                color: "from-orange-500 to-amber-600",
+                border: "border-orange-400",
+                badgeBg: "bg-orange-950 text-orange-300 border-orange-700",
+                traits: ["校内の異変に早く気づく", "業者との連携・調整が円滑", "動きのある実務が好き"],
+                desc: "施設・設備修繕や備品管理に燃えるあなたは「城の修繕士」。破損や点検トラブルを手際よく手配し、安全で快適な教育環境をつくり出します。",
+                matchTask: "施設破損修繕・備品管理・点検窓口"
+            },
+            {
+                id: "registry_master",
+                name: "学籍の記録者",
+                tagline: "子供たちの歴史を未来へ紡ぐ、正確無比なクロニクラー",
+                color: "from-emerald-500 to-teal-600",
+                border: "border-emerald-400",
+                badgeBg: "bg-emerald-950 text-emerald-300 border-emerald-700",
+                traits: ["証明書発行の手際が綺麗", "要録や転出入データの管理が緻密", "過去データの検索がスピーディ"],
+                desc: "学籍や各種証明書発行、要録管理を得意とするあなたは「学籍の記録者」。間違いが許されない大切な記録を整然と整理し、未来へ正確につなぎます。",
+                matchTask: "学籍作成・各種証明書発行・転出入事務"
+            },
+            {
+                id: "frontline_shield",
+                name: "防波堤の盾",
+                tagline: "どんな突然の来客・電話も笑顔で打ち返すガーディアン",
+                color: "from-cyan-400 to-blue-500",
+                border: "border-cyan-400",
+                badgeBg: "bg-cyan-950 text-cyan-300 border-cyan-700",
+                traits: ["電話対応の第一声が爽やか", "施設対外貸出などの調整が円滑", "突発的な来客応対が得意"],
+                desc: "窓口・電話応対や施設開放手続を得意とするあなたは「防波堤の盾」。学校の第一線で明るく丁寧に対応し、学内の安心感を高める守護神です。",
+                matchTask: "窓口・電話一次対応・施設対外貸出"
+            },
+            {
+                id: "invincible_allrounder",
+                name: "無敵のオールラウンダー",
+                tagline: "どんな業務も軽やかに裁く！死角なしのスーパー事務官",
+                color: "from-purple-500 to-pink-600",
+                border: "border-purple-400",
+                badgeBg: "bg-purple-950 text-purple-300 border-purple-700",
+                traits: ["全領域の業務に柔軟に対応", "フットワークが軽く処理がスピーディ", "1人で事務室を回せる順応力"],
+                desc: "多くの業務に前向きに取り組むあなたは「無敵のオールラウンダー」。適応力が高く、どんな場面や異動先でも即戦力としてマルチに大活躍します。",
+                matchTask: "全事務業務（マルチタスク領域）"
+            },
+            {
+                id: "maverick_reformer",
+                name: "自由を求める改革者",
+                tagline: "無駄な紙・手作業を撲滅！DXと効率化を狙うイノベーター",
+                color: "from-rose-500 to-red-600",
+                border: "border-rose-400",
+                badgeBg: "bg-rose-950 text-rose-300 border-rose-700",
+                traits: ["効率化のアイデアが豊富", "デジタル化・Webフォーム化を推進", "ルーティン作業の無駄を省きたい"],
+                desc: "煩雑な従来業務に疑問や改善の必要性を感じるあなたは「自由を求める改革者」。既存のやり方に捉われず、効率化で学校事務に良い変化を起こすポテンシャルを持ちます。",
+                matchTask: "ICT端末ID管理・アンケート集計・業務効率化"
+            }
+        ];
+    </script>
+
+    <!-- Main Gaming Container -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
+
+        <!-- VIEW 1: SURVEY QUEST TAB (CARD DECK / LIST) -->
+        <div id="view-survey" class="space-y-5 my-auto">
+            
+            <!-- User Status & Game HUD Status Bar -->
+            <div class="game-panel p-4 sm:p-5 border border-indigo-500/30">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    
+                    <!-- Player Profile Info -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-11 h-11 rounded-xl bg-indigo-950/80 text-cyan-400 flex items-center justify-center font-black border border-indigo-500/50 shadow-inner shrink-0">
+                            <i class="fa-solid fa-user-ninja text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider font-game">PLAYER NAME</div>
+                            <div class="flex items-center space-x-2">
+                                <span id="current-nickname-display" class="font-extrabold text-white text-base">ゲストプレイヤー</span>
+                                <button onclick="openNicknameModal()" title="プレイヤー変更" class="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 px-2.5 py-1 rounded-lg font-bold border border-slate-700 transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                                    <span>交代</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Gauge Bar (QUEST EXP) -->
+                    <div class="flex-grow max-w-xs">
+                        <div class="flex justify-between text-xs font-bold mb-1 font-game">
+                            <span class="text-indigo-300">QUEST PROGRESS <span id="progress-text" class="text-cyan-400 font-extrabold">0 / 50</span></span>
+                            <span id="progress-percent" class="text-amber-400 font-black">0%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800 p-0.5">
+                            <div id="progress-bar" class="bg-gradient-to-r from-cyan-500 via-indigo-500 to-pink-500 h-full rounded-full transition-all duration-300 shadow-lg shadow-cyan-500/50" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Diagnosis Result Trigger & Mode Toggle -->
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button id="btn-show-my-diagnosis" onclick="showDiagnosisModalForCurrent()" class="hidden px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-indigo-600/40 border border-cyan-300/40 transition flex items-center space-x-1.5 animate-pulse">
+                            <i class="fa-solid fa-sparkles text-amber-300"></i>
+                            <span>ジョブ診断を見る</span>
+                        </button>
+
+                        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button id="btn-mode-deck" onclick="setSurveyMode('deck')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition">
+                                カード
+                            </button>
+                            <button id="btn-mode-list" onclick="setSurveyMode('list')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">
+                                一覧
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- MODE A: GAME CARD DECK VIEW -->
+            <div id="survey-deck-container" class="relative max-w-xl mx-auto w-full py-1">
+                
+                <!-- Toast Message Popup (Encouragement Speech Bubble) -->
+                <div id="cheer-bubble" class="hidden absolute -top-5 left-1/2 -translate-x-1/2 z-30 pointer-events-none w-full max-w-md text-center px-2">
+                    <div id="cheer-message-text" class="bg-slate-900/95 text-cyan-300 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-cyan-500/50 inline-block backdrop-blur-md">
+                        メッセージ
+                    </div>
+                </div>
+
+                <!-- Main Active Quest Card -->
+                <div id="question-card" class="game-panel game-panel-glow p-6 md:p-8 relative overflow-hidden card-enter min-h-[380px] flex flex-col justify-between">
+                    
+                    <div>
+                        <!-- Header inside Card -->
+                        <div class="flex items-center justify-between mb-4">
+                            <span id="card-no" class="bg-indigo-950/80 text-cyan-300 border border-indigo-500/40 text-xs font-extrabold px-3 py-1 rounded-lg font-game">
+                                STAGE Q. 1 / 50
+                            </span>
+
+                            <span id="card-status-badge" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-900 text-slate-500 border border-slate-800">
+                                未選択
+                            </span>
+                        </div>
+
+                        <!-- Task Title & Description -->
+                        <div class="space-y-3 my-4">
+                            <h2 id="card-task-name" class="text-2xl md:text-3xl font-black text-white tracking-wide leading-snug">
+                                年末調整
+                            </h2>
+                            <p id="card-task-desc" class="text-slate-300 text-sm sm:text-base leading-relaxed bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+                                扶養控除申告書・保険料控除等の回収、システム入力、控え確認
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Choice Action Arcade 3D Buttons -->
+                    <div class="space-y-4 pt-4 border-t border-slate-800">
+                        <div class="grid grid-cols-5 gap-1.5 sm:gap-2.5">
+                            
+                            <!-- LOVE BUTTON (Key 1) -->
+                            <button id="btn-choice-love" onclick="submitDeckAnswer('love')" class="btn-arcade btn-love p-2.5 sm:p-3.5 rounded-2xl flex flex-col items-center justify-center text-white transition">
+                                <i class="fa-solid fa-heart text-xl sm:text-2xl mb-1 animate-pulse"></i>
+                                <span class="font-extrabold text-xs sm:text-sm">大好き</span>
+                                <span class="text-[9px] opacity-80 mt-0.5 hidden sm:inline font-game">[ 1 ]</span>
+                            </button>
+
+                            <!-- LIKE BUTTON (Key 2) -->
+                            <button id="btn-choice-like" onclick="submitDeckAnswer('like')" class="btn-arcade btn-like p-2.5 sm:p-3.5 rounded-2xl flex flex-col items-center justify-center text-white transition">
+                                <i class="fa-solid fa-thumbs-up text-xl sm:text-2xl mb-1"></i>
+                                <span class="font-extrabold text-xs sm:text-sm">好き</span>
+                                <span class="text-[9px] opacity-80 mt-0.5 hidden sm:inline font-game">[ 2 ]</span>
+                            </button>
+
+                            <!-- NEUTRAL BUTTON (Key 3) -->
+                            <button id="btn-choice-neutral" onclick="submitDeckAnswer('neutral')" class="btn-arcade btn-neutral p-2.5 sm:p-3.5 rounded-2xl flex flex-col items-center justify-center text-white transition">
+                                <i class="fa-solid fa-face-meh text-xl sm:text-2xl mb-1"></i>
+                                <span class="font-extrabold text-xs sm:text-sm">普通</span>
+                                <span class="text-[9px] opacity-80 mt-0.5 hidden sm:inline font-game">[ 3 ]</span>
+                            </button>
+
+                            <!-- DISLIKE BUTTON (Key 4) -->
+                            <button id="btn-choice-dislike" onclick="submitDeckAnswer('dislike')" class="btn-arcade btn-dislike p-2.5 sm:p-3.5 rounded-2xl flex flex-col items-center justify-center text-white transition">
+                                <i class="fa-solid fa-thumbs-down text-xl sm:text-2xl mb-1"></i>
+                                <span class="font-extrabold text-xs sm:text-sm">嫌い</span>
+                                <span class="text-[9px] opacity-80 mt-0.5 hidden sm:inline font-game">[ 4 ]</span>
+                            </button>
+
+                            <!-- HATE BUTTON (Key 5) -->
+                            <button id="btn-choice-hate" onclick="submitDeckAnswer('hate')" class="btn-arcade btn-hate p-2.5 sm:p-3.5 rounded-2xl flex flex-col items-center justify-center text-white transition">
+                                <i class="fa-solid fa-skull text-xl sm:text-2xl mb-1"></i>
+                                <span class="font-extrabold text-xs sm:text-sm">大嫌い</span>
+                                <span class="text-[9px] opacity-80 mt-0.5 hidden sm:inline font-game">[ 5 ]</span>
+                            </button>
+
+                        </div>
+
+                        <!-- UNASSIGNED BUTTON (Key 6) -->
+                        <button id="btn-choice-unassigned" onclick="submitDeckAnswer('unassigned')" class="btn-arcade btn-none w-full py-2.5 sm:py-3 rounded-2xl flex items-center justify-center space-x-2 text-white transition">
+                            <i class="fa-solid fa-ban text-base sm:text-lg"></i>
+                            <span class="font-extrabold text-xs sm:text-sm">担当していない</span>
+                            <span class="text-[9px] opacity-80 font-game hidden sm:inline">[ 6 ]</span>
+                        </button>
+
+                        <!-- Card Navigation Footer -->
+                        <div class="flex items-center justify-between text-xs text-slate-400 font-bold px-1 pt-1">
+                            <button onclick="prevDeckCard()" class="hover:text-cyan-400 flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-slate-900 transition">
+                                <i class="fa-solid fa-arrow-left"></i>
+                                <span>前へ</span>
+                            </button>
+
+                            <button onclick="nextDeckCard()" class="hover:text-cyan-400 flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-slate-900 transition">
+                                <span>スキップ</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- MODE B: LIST VIEW -->
+            <div id="survey-list-container" class="hidden space-y-3">
+                <div class="flex items-center justify-between game-panel p-4">
+                    <span class="text-xs font-bold text-slate-400">全50項目 一覧コマンド入力</span>
+                    <button onclick="clearCurrentResponses()" class="text-xs bg-rose-950 hover:bg-rose-900 text-rose-300 px-3 py-1.5 rounded-lg font-bold border border-rose-800 transition">
+                        この回答者の入力クリア
+                    </button>
+                </div>
+
+                <div id="survey-task-list" class="grid grid-cols-1 gap-2.5">
+                    <!-- Dynamic List items -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- VIEW 2: RANKING TAB (TIME THIEF BOSSES) -->
+        <div id="view-ranking" class="hidden space-y-5">
+            
+            <!-- Dashboard Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="game-panel p-4 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-950 text-rose-400 flex items-center justify-center font-bold shrink-0 border border-rose-800">
+                        <i class="fa-solid fa-skull text-xl"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="text-[10px] text-slate-400 font-bold">嫌い票 1位（大物泥棒）</div>
+                        <div id="stat-top-dislike" class="text-xs font-extrabold text-rose-400 truncate">--</div>
+                    </div>
+                </div>
+
+                <div class="game-panel p-4 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center font-bold shrink-0 border border-emerald-800">
+                        <i class="fa-solid fa-face-smile-beam text-xl"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="text-[10px] text-slate-400 font-bold">好き票 1位（人気業務）</div>
+                        <div id="stat-top-like" class="text-xs font-extrabold text-emerald-400 truncate">--</div>
+                    </div>
+                </div>
+
+                <div class="game-panel p-4 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-950 text-cyan-400 flex items-center justify-center font-bold shrink-0 border border-indigo-800">
+                        <i class="fa-solid fa-users text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold">回答者エントリー</div>
+                        <div id="stat-respondent-count" class="text-base font-extrabold text-white">0 / 8 名</div>
+                    </div>
+                </div>
+
+                <div class="game-panel p-4 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-950 text-amber-400 flex items-center justify-center font-bold shrink-0 border border-amber-800">
+                        <i class="fa-solid fa-chart-pie text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold">平均カバー率</div>
+                        <div id="stat-active-rate" class="text-base font-extrabold text-white">-- %</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sort Controls -->
+            <div class="game-panel p-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase font-game">SORT:</span>
+                    <button onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm">
+                        「嫌い」票順
+                    </button>
+                    <button onclick="setSortMode('dislike_ratio')" id="sort-dislike-ratio" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
+                        担当内嫌い率順
+                    </button>
+                    <button onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
+                        「好き」票順
+                    </button>
+                </div>
+
+                <button onclick="openCharacterCatalogModal()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md hover:brightness-110 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>8タイプジョブ図鑑</span>
+                </button>
+            </div>
+
+            <!-- Ranking List -->
+            <div id="ranking-list" class="space-y-2.5">
+                <!-- Dynamic ranking cards -->
+            </div>
+
+        </div>
+
+        <!-- VIEW 3: MATRIX TAB (8 PERSONS) -->
+        <div id="view-matrix" class="hidden space-y-4">
+            <div class="game-panel p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">8名分 集計マトリクス表</h2>
+                        <p class="text-xs text-slate-400">緑: 好き / 赤: 嫌い / 灰: 未実施　｜　JSONは後からこの画面へ読み込んで再分析できます</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="exportJSON()" class="text-xs bg-cyan-700 hover:bg-cyan-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="回答・業務設定を丸ごとファイル保存（あとから読込可能）">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>JSON保存</span>
+                        </button>
+                        <button onclick="triggerImportJSON()" class="text-xs bg-amber-700 hover:bg-amber-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="以前保存したJSONを読み込んで分析">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>JSON読込</span>
+                        </button>
+                        <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="importJSON(event)">
+                        <button onclick="generateSampleData()" class="text-xs bg-indigo-950 hover:bg-indigo-900 text-cyan-300 font-bold px-3 py-2 rounded-xl border border-indigo-700 transition flex items-center space-x-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>8人分サンプル生成</span>
+                        </button>
+                        <button onclick="exportCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition flex items-center space-x-1" title="Excelなどで集計するための表形式">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>CSV出力</span>
+                        </button>
+                        <button onclick="resetAllData()" class="text-xs bg-slate-900 hover:bg-rose-950 text-slate-400 hover:text-rose-300 font-bold px-3 py-2 rounded-xl border border-slate-800 transition">
+                            全クリア
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Matrix Table -->
+                <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl bg-slate-950/60">
+                    <table class="w-full text-xs text-left border-collapse min-w-[650px]">
+                        <thead class="bg-slate-900 text-slate-300 uppercase font-bold border-b border-slate-800">
+                            <tr>
+                                <th class="p-2.5 border-r border-slate-800 w-10 text-center">No.</th>
+                                <th class="p-2.5 border-r border-slate-800 min-w-[180px]">業務名</th>
+                                <th id="matrix-header-users" class="p-0 border-r border-slate-800">
+                                    <div id="matrix-user-headers" class="flex text-center divide-x divide-slate-800">
+                                        <!-- Dynamic user header columns -->
+                                    </div>
+                                </th>
+                                <th class="p-2.5 text-center bg-rose-950/60 text-rose-300 w-14">嫌い</th>
+                                <th class="p-2.5 text-center bg-emerald-950/60 text-emerald-300 w-14">好き</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrix-table-body" class="divide-y divide-slate-900/80 bg-slate-950/30">
+                            <!-- Rows generated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- OVERLAY 1: WELCOME / PLAYER SELECT MODAL -->
+    <div id="modal-nickname" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="game-panel game-panel-glow max-w-sm w-full p-6 relative animate-modal my-auto text-center space-y-5 border-2 border-indigo-500/50">
+            
+            <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white rounded-2xl shadow-xl flex items-center justify-center text-3xl border border-cyan-300/40">
+                <i class="fa-solid fa-gamepad animate-bounce"></i>
+            </div>
+
+            <div class="space-y-1">
+                <span class="text-[11px] font-bold text-cyan-400 font-game uppercase tracking-widest">CHARACTER SELECT</span>
+                <h2 class="text-2xl font-black text-white font-game">
+                    さがせ！時間泥棒
+                </h2>
+                <p class="text-xs text-slate-400">
+                    匿名で安心回答。業務の好き嫌いを診断！
+                </p>
+            </div>
+
+            <div class="space-y-2 text-left">
+                <label for="input-init-nickname" class="text-xs font-bold text-slate-300 uppercase tracking-wider block font-game">
+                    ENTER PLAYER NICKNAME:
+                </label>
+                <div class="relative">
+                    <input type="text" id="input-init-nickname" placeholder="例: 匿名事務官A" class="w-full bg-slate-950 border-2 border-indigo-500/60 rounded-xl px-3.5 py-2.5 text-sm font-bold text-cyan-300 focus:border-cyan-400 focus:outline-none transition">
+                </div>
+            </div>
+
+            <button onclick="startSurveyWithCountdown()" class="w-full py-3.5 rounded-xl text-sm font-black bg-gradient-to-r from-cyan-500 via-indigo-600 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-indigo-600/40 active:scale-98 transition flex items-center justify-center space-x-2 font-game">
+                <span>PRESS START!</span>
+                <i class="fa-solid fa-play text-xs"></i>
+            </button>
+
+            <p class="text-[11px] text-slate-500">全50問・キー操作対応カードデッキで快速判定</p>
+        </div>
+    </div>
+
+    <!-- OVERLAY 2: COUNTDOWN SCREEN -->
+    <div id="modal-countdown" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="text-center space-y-3">
+            <div id="countdown-text" class="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-amber-300 count-zoom-anim font-game">
+                3
+            </div>
+            <div id="countdown-subtext" class="text-cyan-300 font-bold text-sm tracking-widest uppercase font-game">
+                GET READY FOR QUEST...
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 2.5: THANKS & CLEAR CELEBRATION SCREEN -->
+    <div id="modal-thanks" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="text-center space-y-5 max-w-md animate-modal my-auto">
+            <div class="w-24 h-24 mx-auto bg-gradient-to-tr from-amber-400 via-pink-500 to-indigo-500 text-white rounded-3xl shadow-2xl shadow-pink-500/50 flex items-center justify-center text-5xl border-2 border-cyan-300/60 animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="space-y-2">
+                <span class="text-xs font-bold text-cyan-300 tracking-widest font-game uppercase">🎉 QUEST COMPLETED!</span>
+                <h2 class="text-3xl sm:text-4xl font-black text-white font-game bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-pink-400 to-amber-300">
+                    お疲れ様でした！
+                </h2>
+                <p class="text-slate-300 text-sm font-bold leading-relaxed">
+                    全50項目の調査がすべて完了しました✨<br>時間泥棒の捜査・分析が完了しました！
+                </p>
+            </div>
+            <div class="pt-2">
+                <div class="inline-flex items-center space-x-2 bg-indigo-950/90 border border-indigo-500/60 text-cyan-300 px-5 py-2.5 rounded-2xl text-xs font-bold font-game animate-pulse shadow-lg">
+                    <i class="fa-solid fa-spinner animate-spin"></i>
+                    <span>ジョブタイプ性格診断 結果を判定中...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: PERSONALITY DIAGNOSIS RESULT -->
+    <div id="modal-diagnosis" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="game-panel game-panel-glow max-w-xl w-full p-6 relative animate-modal my-auto border-2 border-indigo-500/60">
+            
+            <button onclick="closeDiagnosisModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+
+            <div class="text-center space-y-1.5 mb-5">
+                <span class="inline-block px-3 py-1 bg-indigo-950 border border-indigo-500/50 rounded-full text-cyan-300 text-xs font-bold font-game">
+                    🎉 QUEST CLEAR! 50 TASKS COMPLETED
+                </span>
+                <h2 class="text-xl sm:text-2xl font-black text-white">
+                    時間泥棒の捜査完了！
+                </h2>
+                <p class="text-xs text-slate-400">
+                    あなたの回答データから判定された8タイプジョブ診断結果
+                </p>
+            </div>
+
+            <div id="diagnosis-card-content" class="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button onclick="openCharacterCatalogModal()" class="w-full sm:w-auto text-xs font-bold text-cyan-300 hover:text-white bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 px-4 py-2.5 rounded-xl transition flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-users"></i>
+                    <span>8タイプ図鑑を見る</span>
+                </button>
+
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <button onclick="switchTab('ranking'); closeDiagnosisModal();" class="flex-grow sm:flex-grow-0 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl shadow-md transition">
+                        ランキングを見る
+                    </button>
+                    <button onclick="closeDiagnosisModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl transition border border-slate-800">
+                        閉じる
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL 4: 8 CHARACTER CATALOG MODAL -->
+    <div id="modal-catalog" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="game-panel max-w-3xl w-full p-6 relative animate-modal my-auto max-h-[85vh] flex flex-col border border-indigo-500/40">
+            
+            <div class="flex items-center justify-between mb-4 shrink-0">
+                <div>
+                    <h2 class="text-base font-extrabold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-id-card text-cyan-400"></i>
+                        <span>学校事務 8タイプ性格診断図鑑</span>
+                    </h2>
+                </div>
+                <button onclick="closeCatalogModal()" class="text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto custom-scrollbar pr-1 flex-grow">
+                <!-- Dynamically generated -->
+            </div>
+
+            <div class="mt-4 text-center shrink-0 pt-2 border-t border-slate-800">
+                <button onclick="closeCatalogModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-5 py-2 rounded-xl transition border border-slate-800">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: ADMIN MENU - EDIT 50 TASKS -->
+    <div id="modal-admin" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+        <div class="game-panel max-w-2xl w-full p-6 relative animate-modal my-auto max-h-[85vh] flex flex-col border border-indigo-500/40">
+            
+            <div class="flex items-center justify-between mb-4 shrink-0">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-950 text-cyan-400 flex items-center justify-center font-bold border border-indigo-800">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-extrabold text-white">業務項目設定</h2>
+                        <p class="text-xs text-slate-400">全50個の業務項目名と内容をカスタマイズできます</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white p-1.5 rounded-full bg-slate-900 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div id="admin-tasks-editor" class="space-y-2.5 overflow-y-auto custom-scrollbar pr-1 flex-grow">
+                <!-- Task rows dynamically rendered -->
+            </div>
+
+            <div class="mt-4 shrink-0 pt-3 border-t border-slate-800 flex items-center justify-between">
+                <button onclick="resetTasksToDefault()" class="text-xs font-bold text-rose-400 hover:bg-rose-950/50 px-3 py-2 rounded-xl border border-rose-800 transition">
+                    初期状態に戻す
+                </button>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="closeAdminModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-4 py-2 rounded-xl border border-slate-800 transition">
+                        キャンセル
+                    </button>
+                    <button onclick="saveAdminTasks()" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl shadow-md transition">
+                        保存する
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-3 text-center text-xs text-slate-500 mt-auto bg-[#070A12]">
+        さがせ！時間泥棒 &copy; 学校事務 業務診断ナビ QUEST
+    </footer>
+
+    <script>
+        /* APP STATE VARIABLES */
+        let currentNickname = "ゲスト回答者";
+        let userResponses = {}; // Structure: { "ニックネーム": { 1: "like", 2: "dislike" ... } }
+        let currentSortMode = "dislike"; // 'dislike', 'dislike_ratio', 'like'
+        let currentSurveyMode = "deck"; // 'deck' or 'list'
+        let currentDeckIndex = 0; // 0 to 49
+
+        /* SVG AVATAR GENERATOR (HIGH QUALITY CHARACTER ART) */
+        function getCharacterSVG(charId) {
+            switch(charId) {
+                case 'financial_guardian':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#1e1b4b" stroke="#f59e0b" stroke-width="2.5"/>
+                        <circle cx="50" cy="42" r="22" fill="#fff"/>
+                        <path d="M 32 28 L 50 14 L 68 28 L 60 32 L 50 24 L 40 32 Z" fill="#f59e0b"/>
+                        <circle cx="42" cy="40" r="5" fill="none" stroke="#78350f" stroke-width="2"/>
+                        <circle cx="58" cy="40" r="5" fill="none" stroke="#78350f" stroke-width="2"/>
+                        <line x1="47" y1="40" x2="53" y2="40" stroke="#78350f" stroke-width="2"/>
+                        <path d="M 44 50 Q 50 55 56 50" fill="none" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 25 82 C 25 65 35 60 50 60 C 65 60 75 65 75 82 Z" fill="#b45309"/>
+                        <circle cx="50" cy="72" r="7" fill="#fbbf24"/>
+                        <text x="50" y="75.5" font-size="9" font-weight="bold" text-anchor="middle" fill="#78350f">¥</text>
+                    </svg>`;
+
+                case 'benevolent_mother':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#831843" stroke="#f43f5e" stroke-width="2.5"/>
+                        <path d="M 28 45 C 28 20 72 20 72 45 C 72 55 68 60 68 60 L 32 60 C 32 60 28 55 28 45 Z" fill="#fbcfe8"/>
+                        <circle cx="50" cy="44" r="20" fill="#fff"/>
+                        <path d="M 40 42 Q 44 38 48 42" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 52 42 Q 56 38 60 42" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 44 52 Q 50 57 56 52" fill="none" stroke="#9f1239" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 25 85 C 25 68 35 63 50 63 C 65 63 75 68 75 85 Z" fill="#f43f5e"/>
+                    </svg>`;
+
+                case 'labor_strategist':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#1e293b" stroke="#6366f1" stroke-width="2.5"/>
+                        <circle cx="50" cy="42" r="21" fill="#fff"/>
+                        <path d="M 28 35 C 35 20 65 20 72 35 C 72 35 60 28 50 28 C 40 28 28 35 28 35 Z" fill="#4338ca"/>
+                        <line x1="39" y1="42" x2="47" y2="42" stroke="#1e1b4b" stroke-width="2.5"/>
+                        <line x1="53" y1="42" x2="61" y2="42" stroke="#1e1b4b" stroke-width="2.5"/>
+                        <path d="M 46 52 Q 52 54 56 50" fill="none" stroke="#1e1b4b" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#4338ca"/>
+                    </svg>`;
+
+                case 'castle_repairer':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#292524" stroke="#f97316" stroke-width="2.5"/>
+                        <circle cx="50" cy="45" r="20" fill="#fff"/>
+                        <path d="M 28 38 C 28 22 72 22 72 38 Z" fill="#f97316"/>
+                        <rect x="24" y="36" width="52" height="5" rx="2" fill="#ea580c"/>
+                        <circle cx="41" cy="44" r="2.5" fill="#7c2d12"/>
+                        <path d="M 42 52 Q 50 59 58 52 Z" fill="#7c2d12"/>
+                        <path d="M 25 85 C 25 68 35 64 50 64 C 65 64 75 68 75 85 Z" fill="#ea580c"/>
+                    </svg>`;
+
+                case 'registry_master':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+                        <circle cx="50" cy="42" r="20" fill="#fff"/>
+                        <polygon points="50,16 78,28 50,40 22,28" fill="#047857"/>
+                        <circle cx="42" cy="44" r="2" fill="#064e3b"/>
+                        <circle cx="58" cy="44" r="2" fill="#064e3b"/>
+                        <line x1="45" y1="52" x2="55" y2="52" stroke="#064e3b" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#047857"/>
+                    </svg>`;
+
+                case 'frontline_shield':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#083344" stroke="#0284c7" stroke-width="2.5"/>
+                        <circle cx="50" cy="42" r="20" fill="#fff"/>
+                        <circle cx="42" cy="42" r="2.5" fill="#0369a1"/>
+                        <circle cx="58" cy="42" r="2.5" fill="#0369a1"/>
+                        <path d="M 42 50 Q 50 57 58 50 Z" fill="#0284c7"/>
+                        <path d="M 25 85 C 25 68 35 63 50 63 C 65 63 75 68 75 85 Z" fill="#0284c7"/>
+                    </svg>`;
+
+                case 'invincible_allrounder':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#3b0764" stroke="#a855f7" stroke-width="2.5"/>
+                        <circle cx="50" cy="42" r="21" fill="#fff"/>
+                        <polygon points="32,28 38,16 50,24 62,16 68,28" fill="#eab308"/>
+                        <path d="M 43 51 Q 50 56 57 51" fill="none" stroke="#581c87" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 22 85 C 22 65 35 60 50 60 C 65 60 78 65 78 85 Z" fill="#9333ea"/>
+                    </svg>`;
+
+                case 'maverick_reformer':
+                    return `
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="45" fill="#4c0519" stroke="#f43f5e" stroke-width="2.5"/>
+                        <circle cx="50" cy="42" r="20" fill="#fff"/>
+                        <rect x="36" y="38" width="12" height="8" rx="2" fill="#881337"/>
+                        <rect x="52" y="38" width="12" height="8" rx="2" fill="#881337"/>
+                        <line x1="48" y1="42" x2="52" y2="42" stroke="#881337" stroke-width="2"/>
+                        <path d="M 44 52 Q 52 56 56 49" fill="none" stroke="#881337" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M 25 85 C 25 68 35 62 50 62 C 65 62 75 68 75 85 Z" fill="#e11d48"/>
+                    </svg>`;
+
+                default:
+                    return '';
+            }
+        }
+
+        /* WEB AUDIO SYNTHESIZER (RETRO ARCADE SOUND EFFECTS) */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                if (type === 'love') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(659.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.15);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'like') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                } else if (type === 'neutral') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'dislike') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.15);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                } else if (type === 'hate') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.22);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                } else if (type === 'none') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(360, now);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                } else if (type === 'count') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'start') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(880, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'fanfare') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.3);
+                    });
+                }
+            } catch (e) {
+                console.warn("Audio exception:", e);
+            }
+        }
+
+        /* CONFETTI EFFECTS */
+        function triggerCrackerEffect(choice) {
+            if (typeof confetti !== 'function') return;
+            let colors = ['#818cf8', '#f43f5e', '#10b981', '#f59e0b'];
+            if (choice === 'love') colors = ['#ec4899', '#f472b6', '#fbbf24', '#ffffff'];
+            if (choice === 'like') colors = ['#10b981', '#34d399', '#a7f3d0'];
+            if (choice === 'neutral') colors = ['#3b82f6', '#60a5fa', '#93c5fd'];
+            if (choice === 'dislike') colors = ['#f97316', '#fb923c', '#fed7aa'];
+            if (choice === 'hate') colors = ['#e11d48', '#fb7185', '#a855f7'];
+
+            confetti({ particleCount: 18, spread: 50, origin: { x: 0.3, y: 0.7 }, colors: colors, disableForReducedMotion: true });
+            confetti({ particleCount: 18, spread: 50, origin: { x: 0.7, y: 0.7 }, colors: colors, disableForReducedMotion: true });
+        }
+
+        function triggerGrandFinaleConfetti() {
+            if (typeof confetti !== 'function') return;
+            // 豪華な多段連発クラッカー演出
+            confetti({ particleCount: 90, spread: 100, origin: { x: 0.2, y: 0.6 } });
+            confetti({ particleCount: 90, spread: 100, origin: { x: 0.8, y: 0.6 } });
+            setTimeout(() => {
+                confetti({ particleCount: 130, spread: 120, origin: { y: 0.5 } });
+            }, 300);
+            setTimeout(() => {
+                confetti({ particleCount: 110, spread: 140, origin: { y: 0.4 } });
+            }, 600);
+        }
+
+        /* INITIALIZATION */
+        window.onload = function() {
+            loadDataFromStorage();
+            
+            if (!currentNickname || currentNickname === "ゲスト回答者") {
+                openNicknameModal();
+            } else {
+                document.getElementById('modal-nickname').classList.add('hidden');
+                updateNicknameDisplay();
+                renderDeckCard();
+                renderTaskList();
+                updateProgress();
+            }
+
+            setupKeyboardListeners();
+        };
+
+        /* LOCAL STORAGE MANAGER */
+        function saveDataToStorage() {
+            try {
+                const data = {
+                    tasks: TASKS,
+                    responses: userResponses,
+                    currentNickname: currentNickname
+                };
+                localStorage.setItem('school_office_time_thief_data_v1', JSON.stringify(data));
+            } catch (e) {
+                console.error("Failed to save data:", e);
+            }
+        }
+
+        function loadDataFromStorage() {
+            try {
+                const raw = localStorage.getItem('school_office_time_thief_data_v1');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.tasks && Array.isArray(parsed.tasks) && parsed.tasks.length === 50) {
+                        TASKS = parsed.tasks;
+                    }
+                    if (parsed.responses) userResponses = parsed.responses;
+                    if (parsed.currentNickname) currentNickname = parsed.currentNickname;
+                }
+            } catch (e) {
+                console.error("Failed to load data:", e);
+            }
+
+            if (!userResponses[currentNickname]) {
+                userResponses[currentNickname] = {};
+            }
+        }
+
+        /* NICKNAME & WELCOME MODAL LOGIC */
+        function openNicknameModal() {
+            document.getElementById('input-init-nickname').value = currentNickname === "ゲスト回答者" ? "" : currentNickname;
+            document.getElementById('modal-nickname').classList.remove('hidden');
+        }
+
+        function startSurveyWithCountdown() {
+            const inputName = document.getElementById('input-init-nickname').value.trim();
+            if (!inputName) {
+                alert("プレイヤー名（匿名可）を入力してください");
+                return;
+            }
+
+            currentNickname = inputName;
+            if (!userResponses[currentNickname]) {
+                userResponses[currentNickname] = {};
+            }
+
+            saveDataToStorage();
+            updateNicknameDisplay();
+            document.getElementById('modal-nickname').classList.add('hidden');
+
+            runCountdownAnimation(() => {
+                currentDeckIndex = 0;
+                renderDeckCard();
+                renderTaskList();
+                updateProgress();
+            });
+        }
+
+        function runCountdownAnimation(callback) {
+            const overlay = document.getElementById('modal-countdown');
+            const countEl = document.getElementById('countdown-text');
+            const subEl = document.getElementById('countdown-subtext');
+
+            overlay.classList.remove('hidden');
+
+            let step = 3;
+            countEl.textContent = step;
+            subEl.textContent = "GET READY FOR QUEST...";
+            playSound('count');
+
+            const interval = setInterval(() => {
+                step--;
+                if (step > 0) {
+                    countEl.textContent = step;
+                    countEl.classList.remove('count-zoom-anim');
+                    void countEl.offsetWidth;
+                    countEl.classList.add('count-zoom-anim');
+                    playSound('count');
+                } else if (step === 0) {
+                    countEl.textContent = "START!";
+                    subEl.textContent = "調査を開始します";
+                    countEl.classList.remove('count-zoom-anim');
+                    void countEl.offsetWidth;
+                    countEl.classList.add('count-zoom-anim');
+                    playSound('start');
+                } else {
+                    clearInterval(interval);
+                    overlay.classList.add('hidden');
+                    if (callback) callback();
+                }
+            }, 750);
+        }
+
+        function updateNicknameDisplay() {
+            document.getElementById('current-nickname-display').textContent = currentNickname;
+        }
+
+        /* SURVEY MODE SWITCHING */
+        function setSurveyMode(mode) {
+            currentSurveyMode = mode;
+            const deckBtn = document.getElementById('btn-mode-deck');
+            const listBtn = document.getElementById('btn-mode-list');
+            const deckContainer = document.getElementById('survey-deck-container');
+            const listContainer = document.getElementById('survey-list-container');
+
+            if (mode === 'deck') {
+                deckBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
+                listBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                deckContainer.classList.remove('hidden');
+                listContainer.classList.add('hidden');
+                renderDeckCard();
+            } else {
+                listBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
+                deckBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                listContainer.classList.remove('hidden');
+                deckContainer.classList.add('hidden');
+                renderTaskList();
+            }
+        }
+
+        /* RENDER DECK CARD */
+        function renderDeckCard() {
+            const task = TASKS[currentDeckIndex];
+            if (!task) return;
+
+            const card = document.getElementById('question-card');
+            card.classList.remove('card-enter', 'card-exit-left', 'card-exit-right');
+            void card.offsetWidth;
+            card.classList.add('card-enter');
+
+            document.getElementById('card-no').textContent = `STAGE Q. ${currentDeckIndex + 1} / 50`;
+            document.getElementById('card-task-name').textContent = task.name;
+            document.getElementById('card-task-desc').textContent = task.desc;
+
+            const myAnswers = userResponses[currentNickname] || {};
+            const currentChoice = myAnswers[task.id] || null;
+
+            const badge = document.getElementById('card-status-badge');
+
+            if (currentChoice === 'love') {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-pink-950 text-pink-300 border border-pink-700";
+                badge.textContent = "回答済: 大好き";
+            } else if (currentChoice === 'like') {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-700";
+                badge.textContent = "回答済: 好き";
+            } else if (currentChoice === 'neutral') {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-blue-950 text-blue-300 border border-blue-700";
+                badge.textContent = "回答済: 普通";
+            } else if (currentChoice === 'dislike') {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-orange-950 text-orange-300 border border-orange-700";
+                badge.textContent = "回答済: 嫌い";
+            } else if (currentChoice === 'hate') {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-rose-950 text-rose-300 border border-rose-700";
+                badge.textContent = "回答済: 大嫌い";
+            } else if (currentChoice === 'unassigned') {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-slate-900 text-slate-400 border border-slate-700";
+                badge.textContent = "回答済: 担当外";
+            } else {
+                badge.className = "text-xs font-bold px-3 py-1 rounded-lg bg-slate-950 text-slate-500 border border-slate-800";
+                badge.textContent = "未選択";
+            }
+        }
+
+        /* SUBMIT DECK ANSWER */
+        function submitDeckAnswer(choice) {
+            const task = TASKS[currentDeckIndex];
+            if (!task) return;
+
+            if (!userResponses[currentNickname]) userResponses[currentNickname] = {};
+            userResponses[currentNickname][task.id] = choice;
+            saveDataToStorage();
+
+            playSound(choice === 'unassigned' ? 'none' : choice);
+            triggerCrackerEffect(choice);
+
+            // Show Toast Speech Bubble
+            showCheerMessage(choice);
+
+            const card = document.getElementById('question-card');
+            card.classList.add(choice === 'like' ? 'card-exit-right' : 'card-exit-left');
+
+            setTimeout(() => {
+                const answeredCount = Object.keys(userResponses[currentNickname] || {}).length;
+
+                if (answeredCount >= 50) {
+                    // 全50問クリア演出シーケンスを開始
+                    showThanksAndClearSequence();
+                } else {
+                    // 未回答の問題を自動検索して次へ移動（エラー解消）
+                    currentDeckIndex = findNextUnansweredIndex(currentDeckIndex);
+                    renderDeckCard();
+                    updateProgress();
+                }
+            }, 180);
+        }
+
+        /* FIND NEXT UNANSWERED TASK INDEX */
+        function findNextUnansweredIndex(fromIndex) {
+            const myAnswers = userResponses[currentNickname] || {};
+            // 1. fromIndex + 1 から 49 まで未回答を探す
+            for (let i = fromIndex + 1; i < 50; i++) {
+                if (!myAnswers[TASKS[i].id]) return i;
+            }
+            // 2. 見つからなければ 0 から fromIndex まで探す
+            for (let i = 0; i < 50; i++) {
+                if (!myAnswers[TASKS[i].id]) return i;
+            }
+            // 3. すべて回答済みなら次のインデックス
+            return (fromIndex + 1) % 50;
+        }
+
+        /* SHOW THANKS & CLEAR CELEBRATION SEQUENCE */
+        function showThanksAndClearSequence() {
+            playSound('fanfare');
+            triggerGrandFinaleConfetti();
+
+            const thanksModal = document.getElementById('modal-thanks');
+            thanksModal.classList.remove('hidden');
+
+            // 2.2秒間「お疲れ様でした！」を表示した後、診断結果モーダルを開く
+            setTimeout(() => {
+                thanksModal.classList.add('hidden');
+                showDiagnosisModalForCurrent();
+            }, 2200);
+        }
+
+        /* TOAST CHEER MESSAGE */
+        function showCheerMessage(choice) {
+            const bubble = document.getElementById('cheer-bubble');
+            const textEl = document.getElementById('cheer-message-text');
+
+            let msg = "";
+            if (choice === 'love') {
+                msg = LOVE_PRAISES[Math.floor(Math.random() * LOVE_PRAISES.length)];
+            } else if (choice === 'like') {
+                msg = LIKE_PRAISES[Math.floor(Math.random() * LIKE_PRAISES.length)];
+            } else if (choice === 'neutral') {
+                msg = NEUTRAL_MESSAGES[Math.floor(Math.random() * NEUTRAL_MESSAGES.length)];
+            } else if (choice === 'dislike') {
+                msg = DISLIKE_ENCOURAGEMENTS[Math.floor(Math.random() * DISLIKE_ENCOURAGEMENTS.length)];
+            } else if (choice === 'hate') {
+                msg = HATE_ENCOURAGEMENTS[Math.floor(Math.random() * HATE_ENCOURAGEMENTS.length)];
+            } else if (choice === 'unassigned') {
+                msg = "担当外の整理もバッチリ完了です👍";
+            } else {
+                msg = "次へ進みましょう👍";
+            }
+
+            textEl.textContent = msg;
+
+            bubble.classList.remove('hidden', 'toast-anim');
+            void bubble.offsetWidth;
+            bubble.classList.add('toast-anim');
+
+            setTimeout(() => {
+                bubble.classList.add('hidden');
+            }, 1600);
+        }
+
+        function nextDeckCard() {
+            currentDeckIndex = findNextUnansweredIndex(currentDeckIndex);
+            renderDeckCard();
+        }
+
+        function prevDeckCard() {
+            currentDeckIndex = (currentDeckIndex - 1 + 50) % 50;
+            renderDeckCard();
+        }
+
+        /* KEYBOARD LISTENERS */
+        function setupKeyboardListeners() {
+            document.addEventListener('keydown', (e) => {
+                if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                if (!document.getElementById('modal-nickname').classList.contains('hidden')) return;
+                if (!document.getElementById('modal-countdown').classList.contains('hidden')) return;
+                if (currentSurveyMode !== 'deck') return;
+
+                if (e.key === '1') {
+                    submitDeckAnswer('love');
+                } else if (e.key === '2') {
+                    submitDeckAnswer('like');
+                } else if (e.key === '3') {
+                    submitDeckAnswer('neutral');
+                } else if (e.key === '4') {
+                    submitDeckAnswer('dislike');
+                } else if (e.key === '5') {
+                    submitDeckAnswer('hate');
+                } else if (e.key === '6') {
+                    submitDeckAnswer('unassigned');
+                }
+            });
+        }
+
+        /* UPDATE PROGRESS BAR */
+        function updateProgress() {
+            const myAnswers = userResponses[currentNickname] || {};
+            const count = Object.keys(myAnswers).length;
+            const pct = Math.round((count / 50) * 100);
+
+            document.getElementById('progress-text').textContent = `${count} / 50`;
+            document.getElementById('progress-percent').textContent = `${pct}%`;
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+
+            const diagBtn = document.getElementById('btn-show-my-diagnosis');
+            if (count >= 50) {
+                diagBtn.classList.remove('hidden');
+            } else {
+                diagBtn.classList.add('hidden');
+            }
+        }
+
+        /* PERSONALITY DIAGNOSIS ALGORITHM */
+        function calculatePersonalityType(userKey) {
+            const answers = userResponses[userKey] || {};
+            
+            let totalPositiveScore = 0;
+            let totalNegativeScore = 0;
+
+            TASKS.forEach(t => {
+                const val = answers[t.id];
+                if (val === 'love') totalPositiveScore += 2;
+                if (val === 'like') totalPositiveScore += 1;
+                if (val === 'dislike') totalNegativeScore += 1;
+                if (val === 'hate') totalNegativeScore += 2;
+            });
+
+            if (totalPositiveScore >= 25) {
+                return CHARACTERS.find(c => c.id === 'invincible_allrounder');
+            }
+            if (totalNegativeScore >= 25) {
+                return CHARACTERS.find(c => c.id === 'maverick_reformer');
+            }
+
+            const getTaskScore = (taskId) => {
+                const val = answers[taskId];
+                if (val === 'love') return 2;
+                if (val === 'like') return 1;
+                if (val === 'dislike') return -1;
+                if (val === 'hate') return -2;
+                return 0;
+            };
+
+            const scores = {
+                financial_guardian: [13, 14, 15, 16, 17, 18, 19, 20, 29].reduce((acc, id) => acc + getTaskScore(id), 0),
+                benevolent_mother: [21, 24, 25, 26, 27, 28, 30, 45].reduce((acc, id) => acc + getTaskScore(id), 0),
+                labor_strategist: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].reduce((acc, id) => acc + getTaskScore(id), 0),
+                castle_repairer: [31, 32, 33, 34, 35].reduce((acc, id) => acc + getTaskScore(id), 0),
+                registry_master: [36, 37, 38, 39, 40, 41, 42, 43].reduce((acc, id) => acc + getTaskScore(id), 0),
+                frontline_shield: [44, 46, 47, 48, 49, 50].reduce((acc, id) => acc + getTaskScore(id), 0)
+            };
+
+            let maxType = "financial_guardian";
+            let maxScore = -999;
+
+            for (const [type, score] of Object.entries(scores)) {
+                if (score > maxScore) {
+                    maxScore = score;
+                    maxType = type;
+                }
+            }
+
+            return CHARACTERS.find(c => c.id === maxType) || CHARACTERS[0];
+        }
+
+        /* SHOW DIAGNOSIS MODAL */
+        function showDiagnosisModalForCurrent() {
+            const character = calculatePersonalityType(currentNickname);
+            const container = document.getElementById('diagnosis-card-content');
+
+            container.innerHTML = `
+                <div class="flex flex-col sm:flex-row items-center gap-5">
+                    <div class="w-28 h-28 shrink-0 bg-slate-950 p-2 rounded-2xl border-2 ${character.border} shadow-lg relative">
+                        ${getCharacterSVG(character.id)}
+                    </div>
+
+                    <div class="space-y-1 text-center sm:text-left flex-grow">
+                        <span class="text-xs font-bold text-cyan-400 font-game uppercase tracking-wider">
+                            PLAYER: 「${currentNickname}」
+                        </span>
+                        <h3 class="text-2xl font-black text-white">
+                            ${character.name}
+                        </h3>
+                        <p class="text-xs font-bold text-slate-300">
+                            「${character.tagline}」
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-xs sm:text-sm text-slate-300 leading-relaxed space-y-3">
+                    <p>${character.desc}</p>
+
+                    <div class="pt-2 border-t border-slate-800">
+                        <div class="font-bold text-amber-300 text-xs mb-1">💡 学校事務の特徴:</div>
+                        <ul class="list-disc list-inside space-y-0.5 text-slate-300 text-xs">
+                            ${character.traits.map(t => `<li>${t}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="flex items-center space-x-2 pt-1 text-xs text-indigo-300 font-bold">
+                        <span>得意領域:</span>
+                        <span class="bg-indigo-950 px-2.5 py-0.5 rounded-lg border border-indigo-700 text-cyan-300">${character.matchTask}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-diagnosis').classList.remove('hidden');
+        }
+
+        function closeDiagnosisModal() {
+            document.getElementById('modal-diagnosis').classList.add('hidden');
+        }
+
+        /* CATALOG MODAL */
+        function openCharacterCatalogModal() {
+            const grid = document.getElementById('catalog-grid');
+            grid.innerHTML = '';
+
+            CHARACTERS.forEach(char => {
+                const card = document.createElement('div');
+                card.className = `game-panel p-3.5 border ${char.border} flex flex-col justify-between space-y-2.5 shadow-md`;
+
+                card.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-14 h-14 shrink-0 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            ${getCharacterSVG(char.id)}
+                        </div>
+                        <div class="space-y-0.5">
+                            <h4 class="font-extrabold text-sm text-white">
+                                ${char.name}
+                            </h4>
+                            <p class="text-[11px] font-bold text-cyan-300">${char.tagline}</p>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                        ${char.desc}
+                    </p>
+
+                    <div class="text-[11px] font-bold text-indigo-300">
+                        得意分野: <span class="text-slate-200 font-medium">${char.matchTask}</span>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            document.getElementById('modal-catalog').classList.remove('hidden');
+        }
+
+        function closeCatalogModal() {
+            document.getElementById('modal-catalog').classList.add('hidden');
+        }
+
+        /* TAB SWITCHER */
+        function switchTab(tab) {
+            document.getElementById('view-survey').classList.add('hidden');
+            document.getElementById('view-ranking').classList.add('hidden');
+            document.getElementById('view-matrix').classList.add('hidden');
+
+            document.getElementById('nav-survey').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+            document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+            document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+
+            if (tab === 'survey') {
+                document.getElementById('view-survey').classList.remove('hidden');
+                document.getElementById('nav-survey').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                renderDeckCard();
+            } else if (tab === 'ranking') {
+                document.getElementById('view-ranking').classList.remove('hidden');
+                document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                renderRanking();
+            } else if (tab === 'matrix') {
+                document.getElementById('view-matrix').classList.remove('hidden');
+                document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
+                renderMatrix();
+            }
+        }
+
+        /* RENDER SURVEY TASK LIST (LIST MODE) */
+        function renderTaskList() {
+            const container = document.getElementById('survey-task-list');
+            container.innerHTML = '';
+
+            const myAnswers = userResponses[currentNickname] || {};
+
+            TASKS.forEach(task => {
+                const currentChoice = myAnswers[task.id] || null;
+
+                const card = document.createElement('div');
+                card.className = "game-panel p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-slate-700 transition";
+
+                card.innerHTML = `
+                    <div class="flex-grow space-y-0.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-indigo-950 text-cyan-300 font-bold text-[11px] px-2 py-0.5 rounded border border-indigo-800 font-game">No.${task.id}</span>
+                            <h3 class="font-bold text-white text-sm">${task.name}</h3>
+                        </div>
+                        <p class="text-xs text-slate-400 pl-0.5">${task.desc}</p>
+                    </div>
+
+                    <div class="flex items-center space-x-1 shrink-0 flex-wrap gap-y-1">
+                        <button onclick="setAnswerList(${task.id}, 'love')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
+                            currentChoice === 'love' 
+                            ? 'bg-pink-600 text-white border-pink-400 shadow-md' 
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-pink-950 hover:text-pink-300'
+                        }">
+                            <i class="fa-solid fa-heart text-xs"></i>
+                            <span>大好き</span>
+                        </button>
+
+                        <button onclick="setAnswerList(${task.id}, 'like')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
+                            currentChoice === 'like' 
+                            ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' 
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-emerald-950 hover:text-emerald-300'
+                        }">
+                            <i class="fa-solid fa-thumbs-up text-xs"></i>
+                            <span>好き</span>
+                        </button>
+
+                        <button onclick="setAnswerList(${task.id}, 'neutral')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
+                            currentChoice === 'neutral' 
+                            ? 'bg-blue-600 text-white border-blue-400 shadow-md' 
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-blue-950 hover:text-blue-300'
+                        }">
+                            <i class="fa-solid fa-face-meh text-xs"></i>
+                            <span>普通</span>
+                        </button>
+
+                        <button onclick="setAnswerList(${task.id}, 'dislike')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
+                            currentChoice === 'dislike' 
+                            ? 'bg-orange-600 text-white border-orange-500 shadow-md' 
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-orange-950 hover:text-orange-300'
+                        }">
+                            <i class="fa-solid fa-thumbs-down text-xs"></i>
+                            <span>嫌い</span>
+                        </button>
+
+                        <button onclick="setAnswerList(${task.id}, 'hate')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
+                            currentChoice === 'hate' 
+                            ? 'bg-rose-600 text-white border-rose-500 shadow-md' 
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-rose-950 hover:text-rose-300'
+                        }">
+                            <i class="fa-solid fa-skull text-xs"></i>
+                            <span>大嫌い</span>
+                        </button>
+
+                        <button onclick="setAnswerList(${task.id}, 'unassigned')" class="px-2.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center space-x-1 ${
+                            currentChoice === 'unassigned' 
+                            ? 'bg-slate-600 text-white border-slate-400 shadow-md' 
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                        }">
+                            <i class="fa-solid fa-ban text-xs"></i>
+                            <span>担当外</span>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function setAnswerList(taskId, value) {
+            if (!userResponses[currentNickname]) userResponses[currentNickname] = {};
+            
+            if (userResponses[currentNickname][taskId] === value) {
+                delete userResponses[currentNickname][taskId];
+            } else {
+                userResponses[currentNickname][taskId] = value;
+                playSound(value);
+                triggerCrackerEffect(value);
+                showCheerMessage(value);
+            }
+
+            saveDataToStorage();
+            renderTaskList();
+            updateProgress();
+
+            const count = Object.keys(userResponses[currentNickname] || {}).length;
+            if (count >= 50) {
+                playSound('fanfare');
+                triggerGrandFinaleConfetti();
+                showDiagnosisModalForCurrent();
+            }
+        }
+
+        function fillAll(val) {
+            if (!userResponses[currentNickname]) userResponses[currentNickname] = {};
+            TASKS.forEach(t => {
+                if (!userResponses[currentNickname][t.id]) {
+                    userResponses[currentNickname][t.id] = val;
+                }
+            });
+            saveDataToStorage();
+            renderDeckCard();
+            renderTaskList();
+            updateProgress();
+
+            playSound('fanfare');
+            triggerGrandFinaleConfetti();
+            showDiagnosisModalForCurrent();
+        }
+
+        function clearCurrentResponses() {
+            if (confirm(`「${currentNickname}」 さんの回答をクリアしますか？`)) {
+                userResponses[currentNickname] = {};
+                saveDataToStorage();
+                renderDeckCard();
+                renderTaskList();
+                updateProgress();
+            }
+        }
+
+        /* RANKING LOGIC (ASSUMING 8 PERSONS) */
+        function setSortMode(mode) {
+            currentSortMode = mode;
+            ['dislike', 'dislike_ratio', 'like'].forEach(m => {
+                const btn = document.getElementById(`sort-${m.replace('_', '-')}`);
+                if (btn) {
+                    if (m === mode) {
+                        btn.className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm";
+                    } else {
+                        btn.className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800";
+                    }
+                }
+            });
+            renderRanking();
+        }
+
+        function renderRanking() {
+            const rankingList = document.getElementById('ranking-list');
+            rankingList.innerHTML = '';
+
+            const userKeys = Object.keys(userResponses);
+            const totalRespondents = userKeys.length;
+
+            const stats = TASKS.map(task => {
+                let loveCount = 0;
+                let likeCount = 0;
+                let neutralCount = 0;
+                let dislikeCount = 0;
+                let hateCount = 0;
+
+                userKeys.forEach(user => {
+                    const ans = userResponses[user]?.[task.id];
+                    if (ans === 'love') loveCount++;
+                    else if (ans === 'like') likeCount++;
+                    else if (ans === 'neutral') neutralCount++;
+                    else if (ans === 'dislike') dislikeCount++;
+                    else if (ans === 'hate') hateCount++;
+                });
+
+                const activeCount = loveCount + likeCount + neutralCount + dislikeCount + hateCount;
+                const totalDislikeCount = dislikeCount + hateCount;
+                const totalLikeCount = loveCount + likeCount;
+                const dislikeRatio = activeCount > 0 ? (totalDislikeCount / activeCount) * 100 : 0;
+
+                return {
+                    ...task,
+                    loveCount,
+                    likeCount,
+                    neutralCount,
+                    dislikeCount,
+                    hateCount,
+                    totalDislikeCount,
+                    totalLikeCount,
+                    activeCount,
+                    dislikeRatio
+                };
+            });
+
+            const sortedByDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount);
+            const sortedByLike = [...stats].sort((a, b) => b.totalLikeCount - a.totalLikeCount);
+
+            document.getElementById('stat-top-dislike').textContent = sortedByDislike[0]?.totalDislikeCount > 0 
+                ? `${sortedByDislike[0].name} (${sortedByDislike[0].totalDislikeCount}票)` 
+                : "なし";
+            
+            document.getElementById('stat-top-like').textContent = sortedByLike[0]?.totalLikeCount > 0 
+                ? `${sortedByLike[0].name} (${sortedByLike[0].totalLikeCount}票)` 
+                : "なし";
+
+            document.getElementById('stat-respondent-count').textContent = `${totalRespondents} / 8 名`;
+
+            const totalActiveTaskPairs = stats.reduce((acc, curr) => acc + curr.activeCount, 0);
+            const totalPossiblePairs = totalRespondents * 50;
+            const avgActivePct = totalPossiblePairs > 0 ? Math.round((totalActiveTaskPairs / totalPossiblePairs) * 100) : 0;
+            document.getElementById('stat-active-rate').textContent = `${avgActivePct} %`;
+
+            stats.sort((a, b) => {
+                if (currentSortMode === 'dislike') return b.totalDislikeCount - a.totalDislikeCount || b.dislikeRatio - a.dislikeRatio;
+                if (currentSortMode === 'dislike_ratio') return b.dislikeRatio - a.dislikeRatio || b.totalDislikeCount - a.totalDislikeCount;
+                if (currentSortMode === 'like') return b.totalLikeCount - a.totalLikeCount;
+                return 0;
+            });
+
+            stats.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "game-panel p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3";
+
+                let rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800 font-game">${index + 1}</span>`;
+                if (index === 0 && item.totalDislikeCount > 0) rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-black bg-amber-400 text-amber-950 font-game">1</span>`;
+                if (index === 1 && item.totalDislikeCount > 0) rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-black bg-slate-300 text-slate-950 font-game">2</span>`;
+                if (index === 2 && item.totalDislikeCount > 0) rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-black bg-amber-700 text-white font-game">3</span>`;
+
+                const lovePct = totalRespondents > 0 ? Math.round((item.loveCount / totalRespondents) * 100) : 0;
+                const likePct = totalRespondents > 0 ? Math.round((item.likeCount / totalRespondents) * 100) : 0;
+                const neutralPct = totalRespondents > 0 ? Math.round((item.neutralCount / totalRespondents) * 100) : 0;
+                const dislikePct = totalRespondents > 0 ? Math.round((item.dislikeCount / totalRespondents) * 100) : 0;
+                const hatePct = totalRespondents > 0 ? Math.round((item.hateCount / totalRespondents) * 100) : 0;
+
+                card.innerHTML = `
+                    <div class="flex items-start space-x-3 flex-grow">
+                        ${rankBadge}
+                        <div class="space-y-0.5">
+                            <h3 class="font-bold text-white text-sm">${item.name}</h3>
+                            <p class="text-xs text-slate-400">${item.desc}</p>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-60 shrink-0 space-y-1">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-rose-400">不満: ${item.totalDislikeCount}人 (大嫌い:${item.hateCount})</span>
+                            <span class="text-emerald-400">満足: ${item.totalLikeCount}人 (大好き:${item.loveCount})</span>
+                        </div>
+
+                        <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden flex border border-slate-800">
+                            <div class="bg-rose-600 h-full" style="width: ${hatePct}%" title="大嫌い: ${item.hateCount}人"></div>
+                            <div class="bg-orange-500 h-full" style="width: ${dislikePct}%" title="嫌い: ${item.dislikeCount}人"></div>
+                            <div class="bg-blue-500 h-full" style="width: ${neutralPct}%" title="普通: ${item.neutralCount}人"></div>
+                            <div class="bg-emerald-500 h-full" style="width: ${likePct}%" title="好き: ${item.likeCount}人"></div>
+                            <div class="bg-pink-500 h-full" style="width: ${lovePct}%" title="大好き: ${item.loveCount}人"></div>
+                        </div>
+
+                        <div class="flex justify-between text-[11px] text-slate-400">
+                            <span>嫌い率: <strong class="text-slate-200">${Math.round(item.dislikeRatio)}%</strong></span>
+                            <span>普通: ${item.neutralCount}人</span>
+                        </div>
+                    </div>
+                `;
+
+                rankingList.appendChild(card);
+            });
+        }
+
+        /* MATRIX TABLE DISPLAY (8 PERSONS) */
+        function renderMatrix() {
+            const userKeys = Object.keys(userResponses);
+            const userHeadersContainer = document.getElementById('matrix-user-headers');
+            userHeadersContainer.innerHTML = '';
+
+            userKeys.forEach(user => {
+                const th = document.createElement('div');
+                th.className = "p-2 font-bold text-slate-300 truncate text-[11px] min-w-[65px] max-w-[85px] shrink-0 font-game";
+                th.textContent = user;
+                th.title = user;
+                userHeadersContainer.appendChild(th);
+            });
+
+            const tbody = document.getElementById('matrix-table-body');
+            tbody.innerHTML = '';
+
+            TASKS.forEach(task => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/60 transition";
+
+                let dislikeTotal = 0;
+                let likeTotal = 0;
+
+                let userCells = userKeys.map(user => {
+                    const ans = userResponses[user]?.[task.id];
+                    if (ans === 'dislike' || ans === 'hate') dislikeTotal++;
+                    if (ans === 'like' || ans === 'love') likeTotal++;
+
+                    let badge = '<span class="text-slate-600">-</span>';
+                    if (ans === 'love') badge = '<span class="bg-pink-950 text-pink-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-pink-800">大好き</span>';
+                    if (ans === 'like') badge = '<span class="bg-emerald-950 text-emerald-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-emerald-800">好き</span>';
+                    if (ans === 'neutral') badge = '<span class="bg-blue-950 text-blue-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-blue-800">普通</span>';
+                    if (ans === 'dislike') badge = '<span class="bg-orange-950 text-orange-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-orange-800">嫌い</span>';
+                    if (ans === 'hate') badge = '<span class="bg-rose-950 text-rose-300 font-bold px-1.5 py-0.5 rounded text-[10px] border border-rose-800">大嫌い</span>';
+                    if (ans === 'unassigned') badge = '<span class="bg-slate-800 text-slate-400 font-bold px-1.5 py-0.5 rounded text-[10px] border border-slate-700">担当外</span>';
+
+                    return `<div class="p-2 text-center border-r border-slate-800 min-w-[65px] max-w-[85px] shrink-0">${badge}</div>`;
+                }).join('');
+
+                tr.innerHTML = `
+                    <td class="p-2 border-r border-slate-800 text-center font-bold text-slate-500 font-game">${task.id}</td>
+                    <td class="p-2 border-r border-slate-800 font-bold text-white text-xs">${task.name}</td>
+                    <td class="p-0 border-r border-slate-800">
+                        <div class="flex items-center h-full divide-x divide-slate-800">
+                            ${userCells}
+                        </div>
+                    </td>
+                    <td class="p-2 text-center font-extrabold text-rose-400 bg-rose-950/20">${dislikeTotal}</td>
+                    <td class="p-2 text-center font-extrabold text-emerald-400 bg-emerald-950/20">${likeTotal}</td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* ADMIN MODAL */
+        function openAdminModal() {
+            const container = document.getElementById('admin-tasks-editor');
+            container.innerHTML = '';
+
+            TASKS.forEach((task, index) => {
+                const row = document.createElement('div');
+                row.className = "bg-slate-950/80 p-3 rounded-xl border border-slate-800 space-y-1.5";
+
+                row.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="w-8 text-center text-xs font-bold text-cyan-400 font-game">No.${task.id}</span>
+                        <input type="text" id="admin-task-name-${index}" value="${task.name}" class="flex-grow bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-white focus:ring-1 focus:ring-cyan-400 focus:outline-none">
+                    </div>
+                    <div class="pl-10">
+                        <input type="text" id="admin-task-desc-${index}" value="${task.desc}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-300 focus:ring-1 focus:ring-cyan-400 focus:outline-none">
+                    </div>
+                `;
+
+                container.appendChild(row);
+            });
+
+            document.getElementById('modal-admin').classList.remove('hidden');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('modal-admin').classList.add('hidden');
+        }
+
+        function saveAdminTasks() {
+            const updatedTasks = [];
+            for (let i = 0; i < 50; i++) {
+                const nameEl = document.getElementById(`admin-task-name-${i}`);
+                const descEl = document.getElementById(`admin-task-desc-${i}`);
+
+                if (nameEl && descEl) {
+                    updatedTasks.push({
+                        id: i + 1,
+                        name: nameEl.value.trim() || `業務項目 ${i + 1}`,
+                        desc: descEl.value.trim() || "内容説明なし"
+                    });
+                }
+            }
+
+            TASKS = updatedTasks;
+            saveDataToStorage();
+            closeAdminModal();
+
+            renderDeckCard();
+            renderTaskList();
+            renderMatrix();
+            alert("設定を保存しました。");
+        }
+
+        function resetTasksToDefault() {
+            if (confirm("業務項目を初期状態に戻しますか？")) {
+                TASKS = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+                saveDataToStorage();
+                openAdminModal();
+                renderDeckCard();
+                renderTaskList();
+                renderMatrix();
+            }
+        }
+
+        /* SAMPLE DATA GENERATOR (8 PERSONS) */
+        function generateSampleData() {
+            if (confirm("8人分のサンプル回答データを自動生成しますか？")) {
+                const sampleUsers = Array.from({ length: 8 }, (_, i) => `回答者_${i + 1}`);
+                userResponses = {};
+
+                const options = ['love', 'like', 'neutral', 'dislike', 'hate'];
+
+                TASKS.forEach(task => {
+                    sampleUsers.forEach(u => {
+                        if (!userResponses[u]) userResponses[u] = {};
+
+                        let rand = Math.random();
+                        if ([1, 24, 5, 6].includes(task.id)) {
+                            userResponses[u][task.id] = rand < 0.4 ? 'hate' : (rand < 0.75 ? 'dislike' : 'neutral');
+                        } else if ([14, 31, 43].includes(task.id)) {
+                            userResponses[u][task.id] = rand < 0.4 ? 'love' : (rand < 0.75 ? 'like' : 'neutral');
+                        } else {
+                            userResponses[u][task.id] = options[Math.floor(rand * options.length)];
+                        }
+                    });
+                });
+
+                currentNickname = sampleUsers[0];
+                saveDataToStorage();
+                updateNicknameDisplay();
+                renderDeckCard();
+                renderTaskList();
+                updateProgress();
+                renderMatrix();
+                alert("8人分のサンプルデータを生成しました。");
+            }
+        }
+
+        /* FILE DOWNLOAD HELPER */
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function refreshAllViewsAfterDataChange() {
+            if (!userResponses[currentNickname]) {
+                userResponses[currentNickname] = {};
+            }
+            updateNicknameDisplay();
+            renderDeckCard();
+            renderTaskList();
+            updateProgress();
+            renderMatrix();
+            if (!document.getElementById('view-ranking').classList.contains('hidden')) {
+                renderRanking();
+            }
+        }
+
+        /* JSON EXPORT / IMPORT (あとから分析用の完全バックアップ) */
+        function exportJSON() {
+            const respondentCount = Object.keys(userResponses).length;
+            const answeredPairs = Object.values(userResponses).reduce((sum, answers) => sum + Object.keys(answers || {}).length, 0);
+
+            const payload = {
+                version: 1,
+                app: "さがせ！時間泥棒",
+                exportedAt: new Date().toISOString(),
+                meta: {
+                    respondentCount,
+                    answeredPairs,
+                    taskCount: TASKS.length
+                },
+                tasks: TASKS,
+                responses: userResponses,
+                currentNickname: currentNickname
+            };
+
+            const dateStamp = new Date().toISOString().slice(0, 10);
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+            downloadBlob(blob, `さがせ時間泥棒_回答データ_${dateStamp}.json`);
+            alert(`JSONを保存しました。\n回答者: ${respondentCount}名 / 回答セル: ${answeredPairs}件\n\nあとから「JSON読込」で同じデータを復元・分析できます。`);
+        }
+
+        function triggerImportJSON() {
+            document.getElementById('import-json-input').click();
+        }
+
+        function importJSON(event) {
+            const file = event.target.files && event.target.files[0];
+            event.target.value = "";
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(reader.result);
+                    if (!data || typeof data !== "object" || !data.responses || typeof data.responses !== "object") {
+                        throw new Error("responses が見つかりません");
+                    }
+
+                    const importedUsers = Object.keys(data.responses);
+                    if (!confirm(
+                        `ファイル「${file.name}」を読み込みますか？\n` +
+                        `回答者: ${importedUsers.length}名\n` +
+                        `書き出し日時: ${data.exportedAt || "不明"}`
+                    )) {
+                        return;
+                    }
+
+                    const modeReplace = confirm(
+                        "読み込み方法を選んでください。\n\n" +
+                        "OK = 現在の回答をすべて置き換える\n" +
+                        "キャンセル = 既存データにマージ（同じ回答者は上書き）"
+                    );
+
+                    if (Array.isArray(data.tasks) && data.tasks.length === 50) {
+                        TASKS = data.tasks.map((t, i) => ({
+                            id: Number(t.id) || (i + 1),
+                            name: String(t.name || `業務項目 ${i + 1}`),
+                            desc: String(t.desc || "")
+                        }));
+                    }
+
+                    if (modeReplace) {
+                        userResponses = {};
+                        Object.entries(data.responses).forEach(([user, answers]) => {
+                            if (answers && typeof answers === "object") {
+                                userResponses[user] = { ...answers };
+                            }
+                        });
+                    } else {
+                        Object.entries(data.responses).forEach(([user, answers]) => {
+                            if (!answers || typeof answers !== "object") return;
+                            userResponses[user] = { ...(userResponses[user] || {}), ...answers };
+                        });
+                    }
+
+                    if (data.currentNickname && userResponses[data.currentNickname]) {
+                        currentNickname = data.currentNickname;
+                    } else if (!userResponses[currentNickname]) {
+                        const firstUser = Object.keys(userResponses)[0];
+                        currentNickname = firstUser || "ゲスト回答者";
+                        if (!userResponses[currentNickname]) userResponses[currentNickname] = {};
+                    }
+
+                    currentDeckIndex = 0;
+                    saveDataToStorage();
+                    refreshAllViewsAfterDataChange();
+                    document.getElementById('modal-nickname').classList.add('hidden');
+                    switchTab('matrix');
+                    alert(`読み込み完了しました。\n回答者 ${Object.keys(userResponses).length} 名分を分析できます。\nランキング／マトリクス／CSV出力をご利用ください。`);
+                } catch (e) {
+                    console.error(e);
+                    alert("JSONの読み込みに失敗しました。ファイル形式を確認してください。\n" + (e.message || e));
+                }
+            };
+            reader.onerror = () => alert("ファイルの読み込みに失敗しました。");
+            reader.readAsText(file, "UTF-8");
+        }
+
+        /* CSV EXPORT（Excel等での集計・分析用） */
+        function exportCSV() {
+            const userKeys = Object.keys(userResponses);
+            if (userKeys.length === 0) {
+                alert("出力する回答データがありません。先に調査するか、JSONを読み込んでください。");
+                return;
+            }
+
+            let csvContent = "\uFEFF";
+            csvContent += "No,業務名,説明," + userKeys.join(",") + ",大嫌い合計,嫌い合計,普通合計,好き合計,大好き合計,担当外合計\n";
+
+            TASKS.forEach(task => {
+                let loveCount = 0;
+                let likeCount = 0;
+                let neutralCount = 0;
+                let dislikeCount = 0;
+                let hateCount = 0;
+                let unassignedCount = 0;
+
+                const rowAnswers = userKeys.map(u => {
+                    const ans = userResponses[u]?.[task.id];
+                    if (ans === 'love') { loveCount++; return "大好き"; }
+                    if (ans === 'like') { likeCount++; return "好き"; }
+                    if (ans === 'neutral') { neutralCount++; return "普通"; }
+                    if (ans === 'dislike') { dislikeCount++; return "嫌い"; }
+                    if (ans === 'hate') { hateCount++; return "大嫌い"; }
+                    if (ans === 'unassigned') { unassignedCount++; return "担当外"; }
+                    return "未回答";
+                });
+
+                const row = [
+                    task.id,
+                    `"${String(task.name).replace(/"/g, '""')}"`,
+                    `"${String(task.desc).replace(/"/g, '""')}"`,
+                    ...rowAnswers,
+                    hateCount,
+                    dislikeCount,
+                    neutralCount,
+                    likeCount,
+                    loveCount,
+                    unassignedCount
+                ].join(",");
+
+                csvContent += row + "\n";
+            });
+
+            csvContent += "\n--- 回答者性格診断一覧 ---\n回答者名,診断結果タイプ,キャッチコピー\n";
+            userKeys.forEach(u => {
+                const char = calculatePersonalityType(u);
+                csvContent += `"${String(u).replace(/"/g, '""')}","${char.name}","${char.tagline}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            downloadBlob(blob, `さがせ時間泥棒_5段階集計データ_${new Date().toISOString().slice(0,10)}.csv`);
+        }
+
+        /* RESET ALL DATA */
+        function resetAllData() {
+            if (confirm("すべての回答データと設定を初期化しますか？")) {
+                localStorage.removeItem('school_office_time_thief_data_v1');
+                TASKS = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+                userResponses = {};
+                currentNickname = "ゲスト回答者";
+                currentDeckIndex = 0;
+
+                userResponses[currentNickname] = {};
+                saveDataToStorage();
+
+                openNicknameModal();
+                renderMatrix();
+                alert("データを初期化しました。");
+            }
+        }
+    </script>
+</body>
+</html>
