@@ -197,7 +197,7 @@
                         </button>
                         <button id="nav-ranking" onclick="switchTab('ranking')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
                             <i class="fa-solid fa-trophy text-amber-400"></i>
-                            <span>ランキング</span>
+                            <span>集計・分析</span>
                         </button>
                         <button id="nav-matrix" onclick="switchTab('matrix')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
                             <i class="fa-solid fa-chart-grid text-emerald-400"></i>
@@ -585,78 +585,116 @@
 
         </div>
 
-        <!-- VIEW 2: RANKING TAB (TIME THIEF BOSSES) -->
-        <div id="view-ranking" class="hidden space-y-5">
-            
-            <!-- Dashboard Stats Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="game-panel p-4 flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-rose-950 text-rose-400 flex items-center justify-center font-bold shrink-0 border border-rose-800">
-                        <i class="fa-solid fa-skull text-xl"></i>
-                    </div>
-                    <div class="overflow-hidden">
-                        <div class="text-[10px] text-slate-400 font-bold">嫌い票 1位（大物泥棒）</div>
-                        <div id="stat-top-dislike" class="text-xs font-extrabold text-rose-400 truncate">--</div>
-                    </div>
-                </div>
+        <!-- VIEW 2: RANKING + ANALYSIS -->
+        <div id="view-ranking" class="hidden space-y-4">
 
-                <div class="game-panel p-4 flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center font-bold shrink-0 border border-emerald-800">
-                        <i class="fa-solid fa-face-smile-beam text-xl"></i>
-                    </div>
-                    <div class="overflow-hidden">
-                        <div class="text-[10px] text-slate-400 font-bold">好き票 1位（人気業務）</div>
-                        <div id="stat-top-like" class="text-xs font-extrabold text-emerald-400 truncate">--</div>
-                    </div>
+            <!-- Compact summary -->
+            <div class="game-panel p-4 grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-[10px] text-slate-400 font-bold">回答者</div>
+                    <div id="stat-respondent-count" class="text-lg font-black text-white">0名</div>
                 </div>
-
-                <div class="game-panel p-4 flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-950 text-cyan-400 flex items-center justify-center font-bold shrink-0 border border-indigo-800">
-                        <i class="fa-solid fa-users text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-[10px] text-slate-400 font-bold">回答者エントリー</div>
-                        <div id="stat-respondent-count" class="text-base font-extrabold text-white">0 / 8 名</div>
-                    </div>
+                <div>
+                    <div class="text-[10px] text-rose-400 font-bold">時間泥棒 1位</div>
+                    <div id="stat-top-dislike" class="text-sm font-extrabold text-rose-300 truncate px-1">--</div>
                 </div>
-
-                <div class="game-panel p-4 flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-amber-950 text-amber-400 flex items-center justify-center font-bold shrink-0 border border-amber-800">
-                        <i class="fa-solid fa-chart-pie text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-[10px] text-slate-400 font-bold">平均カバー率</div>
-                        <div id="stat-active-rate" class="text-base font-extrabold text-white">-- %</div>
-                    </div>
+                <div>
+                    <div class="text-[10px] text-emerald-400 font-bold">得意・好き 1位</div>
+                    <div id="stat-top-like" class="text-sm font-extrabold text-emerald-300 truncate px-1">--</div>
                 </div>
             </div>
 
-            <!-- Sort Controls -->
-            <div class="game-panel p-4 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase font-game">SORT:</span>
-                    <button onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm">
-                        「嫌い」票順
+            <!-- Sub navigation -->
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                    <button id="btn-panel-rank" onclick="setRankingPanel('rank')" class="px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition">
+                        ランキング
                     </button>
-                    <button onclick="setSortMode('dislike_ratio')" id="sort-dislike-ratio" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
-                        担当内嫌い率順
-                    </button>
-                    <button onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
-                        「好き」票順
+                    <button id="btn-panel-analysis" onclick="setRankingPanel('analysis')" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">
+                        分析
                     </button>
                 </div>
-
-                <button onclick="openCharacterCatalogModal()" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md hover:brightness-110 transition flex items-center space-x-1.5">
-                    <i class="fa-solid fa-id-card"></i>
-                    <span>8タイプジョブ図鑑</span>
+                <button onclick="openCharacterCatalogModal()" class="px-3 py-2 text-xs font-bold rounded-xl bg-slate-900 text-cyan-300 border border-slate-700 hover:bg-slate-800 transition">
+                    8タイプ図鑑
                 </button>
             </div>
 
-            <!-- Ranking List -->
-            <div id="ranking-list" class="space-y-2.5">
-                <!-- Dynamic ranking cards -->
+            <!-- PANEL: Simple Ranking -->
+            <div id="panel-rank" class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button onclick="setSortMode('dislike')" id="sort-dislike" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white">
+                            嫌いが多い順
+                        </button>
+                        <button onclick="setSortMode('like')" id="sort-like" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white">
+                            好きが多い順
+                        </button>
+                    </div>
+                    <button id="btn-toggle-rank-limit" onclick="toggleRankingLimit()" class="text-xs text-slate-400 hover:text-cyan-300 font-bold px-2 py-1">
+                        すべて表示
+                    </button>
+                </div>
+
+                <p id="rank-helper-text" class="text-xs text-slate-400 px-1">負担の大きい業務 TOP（時間泥棒）</p>
+
+                <div id="ranking-list" class="game-panel overflow-hidden divide-y divide-slate-800/80">
+                    <!-- rows -->
+                </div>
             </div>
 
+            <!-- PANEL: Analysis -->
+            <div id="panel-analysis" class="hidden space-y-4">
+                <div class="game-panel p-5 space-y-3">
+                    <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-amber-300"></i>
+                        <span>ひと目でわかる要点</span>
+                    </h3>
+                    <ul id="analysis-insights" class="space-y-2 text-sm text-slate-300 leading-relaxed">
+                        <!-- bullets -->
+                    </ul>
+                </div>
+
+                <div class="game-panel p-5 space-y-3">
+                    <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-cyan-300"></i>
+                        <span>領域別の負担度</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-500">嫌い・大嫌いの割合が高い領域ほど「時間泥棒」が多いです</p>
+                    <div id="analysis-domains" class="space-y-2.5">
+                        <!-- domain bars -->
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="game-panel p-5 space-y-3">
+                        <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                            <span>改善優先（TOP5）</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500">嫌い票が多く、担当者もいる業務ほど優先度高</p>
+                        <div id="analysis-priority" class="space-y-2"></div>
+                    </div>
+
+                    <div class="game-panel p-5 space-y-3">
+                        <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-handshake text-emerald-400"></i>
+                            <span>分担のヒント</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500">嫌いが多い業務を「好き」な人がいれば、依頼・分担の候補です</p>
+                        <div id="analysis-share" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <div class="game-panel p-5 space-y-3">
+                    <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-users text-indigo-300"></i>
+                        <span>ジョブタイプ分布</span>
+                    </h3>
+                    <div id="analysis-jobs" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+
+            <span id="stat-active-rate" class="hidden">-- %</span>
         </div>
 
         <!-- VIEW 3: MATRIX TAB (8 PERSONS) -->
@@ -826,7 +864,7 @@
 
                 <div class="flex items-center space-x-2 w-full sm:w-auto">
                     <button onclick="switchTab('ranking'); closeDiagnosisModal();" class="flex-grow sm:flex-grow-0 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl shadow-md transition">
-                        ランキングを見る
+                        集計・分析を見る
                     </button>
                     <button onclick="closeDiagnosisModal()" class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 px-4 py-2.5 rounded-xl transition border border-slate-800">
                         閉じる
@@ -957,9 +995,11 @@
         /* APP STATE VARIABLES */
         let currentNickname = "ゲスト回答者";
         let userResponses = {}; // Structure: { "ニックネーム": { 1: "like", 2: "dislike" ... } }
-        let currentSortMode = "dislike"; // 'dislike', 'dislike_ratio', 'like'
+        let currentSortMode = "dislike"; // 'dislike' | 'like'
         let currentSurveyMode = "deck"; // 'deck' or 'list'
         let currentDeckIndex = 0; // 0 to 49
+        let rankingPanel = "rank"; // 'rank' | 'analysis'
+        let rankingShowAll = false;
         let googleSheetsWebAppUrl = ""; // Apps Script Web App URL (.../exec)
         const DEFAULT_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MRtZVSAwAokFMAZOSRIlwFz8m7qr5HOvDi8gKPNLe0E/edit";
         const DEFAULT_GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzKAMhlCeh70EzZZ3DKwmMjNfSaEurMYL18wyuY5KeNJw1Urrpcsga2p1nuhjbx2VvDpQ/exec";
@@ -1780,7 +1820,7 @@
             } else if (tab === 'ranking') {
                 document.getElementById('view-ranking').classList.remove('hidden');
                 document.getElementById('nav-ranking').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
-                renderRanking();
+                renderRankingAndAnalysis();
             } else if (tab === 'matrix') {
                 document.getElementById('view-matrix').classList.remove('hidden');
                 document.getElementById('nav-matrix').className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5";
@@ -1923,136 +1963,289 @@
             }
         }
 
-        /* RANKING LOGIC (ASSUMING 8 PERSONS) */
-        function setSortMode(mode) {
-            currentSortMode = mode;
-            ['dislike', 'dislike_ratio', 'like'].forEach(m => {
-                const btn = document.getElementById(`sort-${m.replace('_', '-')}`);
-                if (btn) {
-                    if (m === mode) {
-                        btn.className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm";
-                    } else {
-                        btn.className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-slate-400 hover:text-white border border-slate-800";
-                    }
-                }
-            });
+        /* RANKING + ANALYSIS */
+        const TASK_DOMAINS = [
+            { id: 'labor', name: '人事・給与・勤怠', ids: [1,2,3,4,5,6,7,8,9,10,11,12] },
+            { id: 'finance', name: '予算・決算・会計', ids: [13,14,15,16,17,18,19,20,29] },
+            { id: 'aid', name: '私費・就学援助', ids: [21,22,23,24,25,26,27,28,30,45] },
+            { id: 'facility', name: '施設・備品', ids: [31,32,33,34,35] },
+            { id: 'docs', name: '文書・学籍', ids: [36,37,38,39,40,41,42,43] },
+            { id: 'front', name: '窓口・対外・ICT', ids: [44,46,47,48,49,50] }
+        ];
+
+        function setRankingPanel(panel) {
+            rankingPanel = panel;
+            const rankBtn = document.getElementById('btn-panel-rank');
+            const analysisBtn = document.getElementById('btn-panel-analysis');
+            const rankPanel = document.getElementById('panel-rank');
+            const analysisPanel = document.getElementById('panel-analysis');
+
+            if (panel === 'rank') {
+                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
+                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                rankPanel.classList.remove('hidden');
+                analysisPanel.classList.add('hidden');
+            } else {
+                analysisBtn.className = "px-4 py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-md transition";
+                rankBtn.className = "px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+                analysisPanel.classList.remove('hidden');
+                rankPanel.classList.add('hidden');
+                renderAnalysis();
+            }
+        }
+
+        function toggleRankingLimit() {
+            rankingShowAll = !rankingShowAll;
+            const btn = document.getElementById('btn-toggle-rank-limit');
+            if (btn) btn.textContent = rankingShowAll ? "TOP10だけ表示" : "すべて表示";
             renderRanking();
         }
 
-        function renderRanking() {
-            const rankingList = document.getElementById('ranking-list');
-            rankingList.innerHTML = '';
+        function setSortMode(mode) {
+            currentSortMode = mode;
+            const dislikeBtn = document.getElementById('sort-dislike');
+            const likeBtn = document.getElementById('sort-like');
+            if (mode === 'dislike') {
+                dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white";
+                likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
+            } else {
+                likeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white";
+                dislikeBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white";
+            }
+            const helper = document.getElementById('rank-helper-text');
+            if (helper) {
+                helper.textContent = mode === 'dislike'
+                    ? "負担の大きい業務 TOP（時間泥棒）"
+                    : "好まれている／得意な業務 TOP";
+            }
+            renderRanking();
+        }
 
+        function computeTaskStats() {
             const userKeys = Object.keys(userResponses);
             const totalRespondents = userKeys.length;
 
             const stats = TASKS.map(task => {
-                let loveCount = 0;
-                let likeCount = 0;
-                let neutralCount = 0;
-                let dislikeCount = 0;
-                let hateCount = 0;
+                let loveCount = 0, likeCount = 0, neutralCount = 0, dislikeCount = 0, hateCount = 0, unassignedCount = 0;
+                const lovers = [];
+                const haters = [];
 
                 userKeys.forEach(user => {
                     const ans = userResponses[user]?.[task.id];
-                    if (ans === 'love') loveCount++;
-                    else if (ans === 'like') likeCount++;
+                    if (ans === 'love') { loveCount++; lovers.push(user); }
+                    else if (ans === 'like') { likeCount++; lovers.push(user); }
                     else if (ans === 'neutral') neutralCount++;
-                    else if (ans === 'dislike') dislikeCount++;
-                    else if (ans === 'hate') hateCount++;
+                    else if (ans === 'dislike') { dislikeCount++; haters.push(user); }
+                    else if (ans === 'hate') { hateCount++; haters.push(user); }
+                    else if (ans === 'unassigned') unassignedCount++;
                 });
 
                 const activeCount = loveCount + likeCount + neutralCount + dislikeCount + hateCount;
                 const totalDislikeCount = dislikeCount + hateCount;
                 const totalLikeCount = loveCount + likeCount;
                 const dislikeRatio = activeCount > 0 ? (totalDislikeCount / activeCount) * 100 : 0;
+                const priorityScore = totalDislikeCount * 2 + hateCount + (activeCount > 0 ? Math.round(dislikeRatio / 20) : 0);
 
                 return {
                     ...task,
-                    loveCount,
-                    likeCount,
-                    neutralCount,
-                    dislikeCount,
-                    hateCount,
-                    totalDislikeCount,
-                    totalLikeCount,
-                    activeCount,
-                    dislikeRatio
+                    loveCount, likeCount, neutralCount, dislikeCount, hateCount, unassignedCount,
+                    totalDislikeCount, totalLikeCount, activeCount, dislikeRatio, priorityScore,
+                    lovers, haters
                 };
             });
 
-            const sortedByDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount);
+            return { stats, userKeys, totalRespondents };
+        }
+
+        function renderRankingAndAnalysis() {
+            renderRanking();
+            if (rankingPanel === 'analysis') renderAnalysis();
+        }
+
+        function renderRanking() {
+            const rankingList = document.getElementById('ranking-list');
+            if (!rankingList) return;
+            rankingList.innerHTML = '';
+
+            const { stats, totalRespondents } = computeTaskStats();
+            const sortedByDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount || b.dislikeRatio - a.dislikeRatio);
             const sortedByLike = [...stats].sort((a, b) => b.totalLikeCount - a.totalLikeCount);
 
-            document.getElementById('stat-top-dislike').textContent = sortedByDislike[0]?.totalDislikeCount > 0 
-                ? `${sortedByDislike[0].name} (${sortedByDislike[0].totalDislikeCount}票)` 
+            document.getElementById('stat-top-dislike').textContent = sortedByDislike[0]?.totalDislikeCount > 0
+                ? sortedByDislike[0].name
                 : "なし";
-            
-            document.getElementById('stat-top-like').textContent = sortedByLike[0]?.totalLikeCount > 0 
-                ? `${sortedByLike[0].name} (${sortedByLike[0].totalLikeCount}票)` 
+            document.getElementById('stat-top-like').textContent = sortedByLike[0]?.totalLikeCount > 0
+                ? sortedByLike[0].name
                 : "なし";
-
-            document.getElementById('stat-respondent-count').textContent = `${totalRespondents} / 8 名`;
+            document.getElementById('stat-respondent-count').textContent = `${totalRespondents}名`;
 
             const totalActiveTaskPairs = stats.reduce((acc, curr) => acc + curr.activeCount, 0);
             const totalPossiblePairs = totalRespondents * 50;
             const avgActivePct = totalPossiblePairs > 0 ? Math.round((totalActiveTaskPairs / totalPossiblePairs) * 100) : 0;
-            document.getElementById('stat-active-rate').textContent = `${avgActivePct} %`;
+            const activeRateEl = document.getElementById('stat-active-rate');
+            if (activeRateEl) activeRateEl.textContent = `${avgActivePct} %`;
 
-            stats.sort((a, b) => {
-                if (currentSortMode === 'dislike') return b.totalDislikeCount - a.totalDislikeCount || b.dislikeRatio - a.dislikeRatio;
-                if (currentSortMode === 'dislike_ratio') return b.dislikeRatio - a.dislikeRatio || b.totalDislikeCount - a.totalDislikeCount;
-                if (currentSortMode === 'like') return b.totalLikeCount - a.totalLikeCount;
-                return 0;
+            const sorted = [...stats].sort((a, b) => {
+                if (currentSortMode === 'like') return b.totalLikeCount - a.totalLikeCount || b.loveCount - a.loveCount;
+                return b.totalDislikeCount - a.totalDislikeCount || b.dislikeRatio - a.dislikeRatio;
             });
 
-            stats.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = "game-panel p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3";
+            if (totalRespondents === 0) {
+                rankingList.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">まだ回答がありません。調査タブで回答するか、マトリクスからJSON/サンプルを読み込んでください。</div>`;
+                return;
+            }
 
-                let rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold bg-slate-900 text-slate-400 border border-slate-800 font-game">${index + 1}</span>`;
-                if (index === 0 && item.totalDislikeCount > 0) rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-black bg-amber-400 text-amber-950 font-game">1</span>`;
-                if (index === 1 && item.totalDislikeCount > 0) rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-black bg-slate-300 text-slate-950 font-game">2</span>`;
-                if (index === 2 && item.totalDislikeCount > 0) rankBadge = `<span class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-black bg-amber-700 text-white font-game">3</span>`;
+            const limit = rankingShowAll ? sorted.length : Math.min(10, sorted.length);
+            const maxVal = Math.max(
+                1,
+                ...sorted.slice(0, limit).map(s => currentSortMode === 'like' ? s.totalLikeCount : s.totalDislikeCount)
+            );
 
-                const lovePct = totalRespondents > 0 ? Math.round((item.loveCount / totalRespondents) * 100) : 0;
-                const likePct = totalRespondents > 0 ? Math.round((item.likeCount / totalRespondents) * 100) : 0;
-                const neutralPct = totalRespondents > 0 ? Math.round((item.neutralCount / totalRespondents) * 100) : 0;
-                const dislikePct = totalRespondents > 0 ? Math.round((item.dislikeCount / totalRespondents) * 100) : 0;
-                const hatePct = totalRespondents > 0 ? Math.round((item.hateCount / totalRespondents) * 100) : 0;
+            for (let index = 0; index < limit; index++) {
+                const item = sorted[index];
+                const primary = currentSortMode === 'like' ? item.totalLikeCount : item.totalDislikeCount;
+                const secondary = currentSortMode === 'like' ? item.totalDislikeCount : item.totalLikeCount;
+                const barPct = Math.round((primary / maxVal) * 100);
+                const barColor = currentSortMode === 'like' ? 'bg-emerald-500' : 'bg-rose-500';
 
-                card.innerHTML = `
-                    <div class="flex items-start space-x-3 flex-grow">
-                        ${rankBadge}
-                        <div class="space-y-0.5">
-                            <h3 class="font-bold text-white text-sm">${item.name}</h3>
-                            <p class="text-xs text-slate-400">${item.desc}</p>
+                let rankClass = "text-slate-500";
+                if (index === 0) rankClass = currentSortMode === 'like' ? "text-emerald-300" : "text-rose-300";
+                else if (index === 1) rankClass = "text-slate-300";
+                else if (index === 2) rankClass = "text-amber-600";
+
+                const row = document.createElement('div');
+                row.className = "px-4 py-3 flex items-center gap-3 hover:bg-slate-900/50 transition";
+                row.innerHTML = `
+                    <div class="w-8 text-center text-base font-black font-game ${rankClass}">${index + 1}</div>
+                    <div class="flex-grow min-w-0">
+                        <div class="font-bold text-white text-sm truncate">${item.name}</div>
+                        <div class="mt-1.5 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                            <div class="${barColor} h-full rounded-full transition-all" style="width:${barPct}%"></div>
                         </div>
                     </div>
-
-                    <div class="w-full md:w-60 shrink-0 space-y-1">
-                        <div class="flex justify-between text-xs font-bold">
-                            <span class="text-rose-400">不満: ${item.totalDislikeCount}人 (大嫌い:${item.hateCount})</span>
-                            <span class="text-emerald-400">満足: ${item.totalLikeCount}人 (大好き:${item.loveCount})</span>
-                        </div>
-
-                        <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden flex border border-slate-800">
-                            <div class="bg-rose-600 h-full" style="width: ${hatePct}%" title="大嫌い: ${item.hateCount}人"></div>
-                            <div class="bg-orange-500 h-full" style="width: ${dislikePct}%" title="嫌い: ${item.dislikeCount}人"></div>
-                            <div class="bg-blue-500 h-full" style="width: ${neutralPct}%" title="普通: ${item.neutralCount}人"></div>
-                            <div class="bg-emerald-500 h-full" style="width: ${likePct}%" title="好き: ${item.likeCount}人"></div>
-                            <div class="bg-pink-500 h-full" style="width: ${lovePct}%" title="大好き: ${item.loveCount}人"></div>
-                        </div>
-
-                        <div class="flex justify-between text-[11px] text-slate-400">
-                            <span>嫌い率: <strong class="text-slate-200">${Math.round(item.dislikeRatio)}%</strong></span>
-                            <span>普通: ${item.neutralCount}人</span>
-                        </div>
+                    <div class="shrink-0 text-right w-20">
+                        <div class="text-sm font-black ${currentSortMode === 'like' ? 'text-emerald-300' : 'text-rose-300'}">${primary}<span class="text-[10px] font-bold text-slate-500 ml-0.5">票</span></div>
+                        <div class="text-[10px] text-slate-500">${currentSortMode === 'like' ? '嫌い' : '好き'} ${secondary}</div>
                     </div>
                 `;
+                rankingList.appendChild(row);
+            }
+        }
 
-                rankingList.appendChild(card);
+        function renderAnalysis() {
+            const insightsEl = document.getElementById('analysis-insights');
+            const domainsEl = document.getElementById('analysis-domains');
+            const priorityEl = document.getElementById('analysis-priority');
+            const shareEl = document.getElementById('analysis-share');
+            const jobsEl = document.getElementById('analysis-jobs');
+            if (!insightsEl) return;
+
+            const { stats, userKeys, totalRespondents } = computeTaskStats();
+
+            if (totalRespondents === 0) {
+                insightsEl.innerHTML = `<li class="text-slate-500">分析する回答データがありません。</li>`;
+                domainsEl.innerHTML = '';
+                priorityEl.innerHTML = '';
+                shareEl.innerHTML = '';
+                jobsEl.innerHTML = '';
+                return;
+            }
+
+            const byDislike = [...stats].sort((a, b) => b.totalDislikeCount - a.totalDislikeCount);
+            const byLike = [...stats].sort((a, b) => b.totalLikeCount - a.totalLikeCount);
+            const byPriority = [...stats].sort((a, b) => b.priorityScore - a.priorityScore || b.totalDislikeCount - a.totalDislikeCount);
+            const topThief = byDislike.find(s => s.totalDislikeCount > 0);
+            const topLoved = byLike.find(s => s.totalLikeCount > 0);
+            const highHateRate = [...stats]
+                .filter(s => s.activeCount >= Math.max(1, Math.ceil(totalRespondents * 0.4)))
+                .sort((a, b) => b.dislikeRatio - a.dislikeRatio)[0];
+
+            const insights = [];
+            insights.push(`回答者は <strong class="text-white">${totalRespondents}名</strong> です。`);
+            if (topThief) {
+                insights.push(`いちばんの時間泥棒は <strong class="text-rose-300">「${topThief.name}」</strong>（嫌い ${topThief.totalDislikeCount}票／うち大嫌い ${topThief.hateCount}）。`);
+            }
+            if (topLoved) {
+                insights.push(`得意・好きが多いのは <strong class="text-emerald-300">「${topLoved.name}」</strong>（好き ${topLoved.totalLikeCount}票）。`);
+            }
+            if (highHateRate && highHateRate.dislikeRatio >= 50) {
+                insights.push(`担当者の中でも不満率が高いのは <strong class="text-amber-300">「${highHateRate.name}」</strong>（嫌い率 ${Math.round(highHateRate.dislikeRatio)}%）。効率化・標準化の候補です。`);
+            }
+            const shareCandidates = byDislike.filter(s => s.totalDislikeCount >= 2 && s.lovers.length > 0).slice(0, 3);
+            if (shareCandidates.length > 0) {
+                insights.push(`分担できそうな業務が <strong class="text-cyan-300">${shareCandidates.length}件</strong> あります（下の「分担のヒント」参照）。`);
+            } else {
+                insights.push(`いまは「嫌いが多いのに好きな人がいる」業務が少ないです。外注・デジタル化・手順の見直しを検討してみてください。`);
+            }
+            insightsEl.innerHTML = insights.map(t => `<li class="flex gap-2"><span class="text-cyan-400 shrink-0">・</span><span>${t}</span></li>`).join('');
+
+            // Domain bars
+            const domainRows = TASK_DOMAINS.map(domain => {
+                let dislike = 0, active = 0;
+                domain.ids.forEach(id => {
+                    const s = stats.find(t => t.id === id);
+                    if (!s) return;
+                    dislike += s.totalDislikeCount;
+                    active += s.activeCount;
+                });
+                const rate = active > 0 ? Math.round((dislike / active) * 100) : 0;
+                return { ...domain, dislike, active, rate };
+            }).sort((a, b) => b.rate - a.rate || b.dislike - a.dislike);
+
+            const maxDomainRate = Math.max(1, ...domainRows.map(d => d.rate));
+            domainsEl.innerHTML = domainRows.map(d => `
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-bold text-slate-200">${d.name}</span>
+                        <span class="text-rose-300 font-bold">${d.rate}% <span class="text-slate-500 font-medium">（嫌い${d.dislike}/${d.active || 0}）</span></span>
+                    </div>
+                    <div class="h-2.5 rounded-full bg-slate-950 border border-slate-800 overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-rose-600 to-orange-500 rounded-full" style="width:${Math.round((d.rate / maxDomainRate) * 100)}%"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Priority TOP5
+            priorityEl.innerHTML = byPriority.filter(s => s.totalDislikeCount > 0).slice(0, 5).map((s, i) => `
+                <div class="flex items-start gap-2 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <span class="text-xs font-black text-rose-400 font-game w-5">${i + 1}</span>
+                    <div class="min-w-0">
+                        <div class="text-sm font-bold text-white truncate">${s.name}</div>
+                        <div class="text-[11px] text-slate-400">嫌い${s.totalDislikeCount}票 / 担当${s.activeCount}人 / 嫌い率${Math.round(s.dislikeRatio)}%</div>
+                    </div>
+                </div>
+            `).join('') || `<div class="text-xs text-slate-500">該当なし</div>`;
+
+            // Share hints
+            const shares = byDislike
+                .filter(s => s.totalDislikeCount > 0 && s.lovers.length > 0)
+                .slice(0, 5);
+            shareEl.innerHTML = shares.map(s => `
+                <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <div class="text-sm font-bold text-white truncate">${s.name}</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">
+                        嫌い: <span class="text-rose-300">${s.haters.slice(0, 3).join('、')}${s.haters.length > 3 ? '…' : ''}</span>
+                        → 得意そう: <span class="text-emerald-300">${s.lovers.slice(0, 3).join('、')}${s.lovers.length > 3 ? '…' : ''}</span>
+                    </div>
+                </div>
+            `).join('') || `<div class="text-xs text-slate-500">いまは分担候補が見つかりません</div>`;
+
+            // Job distribution
+            const jobCounts = {};
+            CHARACTERS.forEach(c => { jobCounts[c.id] = { char: c, users: [] }; });
+            userKeys.forEach(u => {
+                const answered = Object.keys(userResponses[u] || {}).length;
+                if (answered < 10) return; // skip nearly empty
+                const c = calculatePersonalityType(u);
+                if (c && jobCounts[c.id]) jobCounts[c.id].users.push(u);
             });
+            const jobList = Object.values(jobCounts).filter(j => j.users.length > 0).sort((a, b) => b.users.length - a.users.length);
+            jobsEl.innerHTML = jobList.length ? jobList.map(j => `
+                <div class="p-3 rounded-xl border ${j.char.border} bg-slate-950/60">
+                    <div class="text-sm font-extrabold text-white">${j.char.name} <span class="text-cyan-300 text-xs">${j.users.length}名</span></div>
+                    <div class="text-[11px] text-slate-400 mt-1 truncate" title="${j.users.join('、')}">${j.users.join('、')}</div>
+                </div>
+            `).join('') : `<div class="text-xs text-slate-500 col-span-2">診断できる回答者がいません（各人10問以上回答が目安）</div>`;
         }
 
         /* MATRIX TABLE DISPLAY (8 PERSONS) */
@@ -2351,7 +2544,7 @@
             updateProgress();
             renderMatrix();
             if (!document.getElementById('view-ranking').classList.contains('hidden')) {
-                renderRanking();
+                renderRankingAndAnalysis();
             }
         }
 
