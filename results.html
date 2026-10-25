@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析レポート | さがせ！時間泥棒</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,500&family=Figtree:wght@400;500;600;700&family=Shippori+Mincho:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #121212;
+            --muted: #8A8580;
+            --paper: #F7F6F4;
+            --blush: #C9A3A3;
+            --rose: #B87A7A;
+            --sage: #6E7A72;
+            --line: rgba(18, 18, 18, 0.12);
+        }
+        body {
+            font-family: 'Figtree', 'Hiragino Sans', sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            background-image:
+                linear-gradient(180deg, rgba(255,255,255,0.8) 0%, transparent 30%),
+                radial-gradient(ellipse 90% 50% at 90% 0%, rgba(201,163,163,0.16) 0%, transparent 55%),
+                linear-gradient(165deg, #F9F8F6 0%, #F3F1EE 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        .font-display { font-family: 'Bodoni Moda', 'Shippori Mincho', serif; }
+        .font-jp { font-family: 'Shippori Mincho', 'Bodoni Moda', serif; letter-spacing: 0.06em; }
+        .panel {
+            background: rgba(255,255,255,0.78);
+            border: 1px solid var(--line);
+        }
+        .rule { height: 1px; background: rgba(18,18,18,0.16); }
+        .bar {
+            height: 4px;
+            background: #EDEAE7;
+            overflow: hidden;
+        }
+        .bar > span { display: block; height: 100%; }
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .rise { animation: rise 0.55s ease-out both; }
+        .rise-2 { animation: rise 0.55s 0.08s ease-out both; }
+        .rise-3 { animation: rise 0.55s 0.16s ease-out both; }
+    </style>
+</head>
+<body class="antialiased selection:bg-[#C9A3A3]">
+    <header class="border-b border-black/10 bg-[#F7F6F4]/90 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-[4.5rem] flex items-center justify-between">
+            <div>
+                <div class="text-[9px] tracking-[0.28em] uppercase text-[#8A8580] font-display">Analysis Report</div>
+                <h1 class="font-jp text-xl sm:text-2xl tracking-[0.1em]">さがせ！時間泥棒</h1>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="btn-reload" onclick="loadAndRender()" class="px-3 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] border border-black/15 hover:bg-white transition">
+                    再読込
+                </button>
+                <a href="./index.html" class="px-3 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] bg-[#121212] text-white hover:bg-[#2A2A2A] transition">
+                    診断へ
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-12">
+        <section class="rise text-center space-y-4">
+            <div class="text-[10px] tracking-[0.35em] uppercase text-[#8A8580] font-display">School Office Research</div>
+            <h2 class="font-jp text-3xl sm:text-5xl tracking-[0.08em] leading-tight">回答データ分析レポート</h2>
+            <div class="rule max-w-[5rem] mx-auto bg-[#C9A3A3]"></div>
+            <p id="status-line" class="text-sm text-[#8A8580]">スプレッドシートから読み込み中…</p>
+        </section>
+
+        <section id="summary-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 rise-2"></section>
+
+        <section class="panel p-6 sm:p-8 space-y-4 rise-2">
+            <div class="flex items-end justify-between gap-3">
+                <div>
+                    <div class="text-[10px] tracking-[0.25em] uppercase text-[#8A8580] font-display">Insights</div>
+                    <h3 class="font-jp text-2xl tracking-[0.08em] mt-1">研究メモ</h3>
+                </div>
+            </div>
+            <div class="rule"></div>
+            <ul id="insights" class="space-y-3 text-sm sm:text-base text-[#5C5754] leading-relaxed"></ul>
+        </section>
+
+        <section class="grid md:grid-cols-2 gap-6 rise-3">
+            <div class="panel p-6 space-y-4">
+                <div>
+                    <div class="text-[10px] tracking-[0.25em] uppercase text-[#B87A7A] font-display">Time Thieves</div>
+                    <h3 class="font-jp text-xl tracking-[0.06em] mt-1">嫌いが多い業務 TOP10</h3>
+                </div>
+                <div class="rule bg-[#C9A3A3]/60"></div>
+                <div id="top-dislike" class="space-y-3"></div>
+            </div>
+            <div class="panel p-6 space-y-4">
+                <div>
+                    <div class="text-[10px] tracking-[0.25em] uppercase text-[#6E7A72] font-display">Favorites</div>
+                    <h3 class="font-jp text-xl tracking-[0.06em] mt-1">好きが多い業務 TOP10</h3>
+                </div>
+                <div class="rule bg-[#6E7A72]/40"></div>
+                <div id="top-like" class="space-y-3"></div>
+            </div>
+        </section>
+
+        <section class="panel p-6 sm:p-8 space-y-5 rise-3">
+            <div>
+                <div class="text-[10px] tracking-[0.25em] uppercase text-[#8A8580] font-display">By Domain</div>
+                <h3 class="font-jp text-2xl tracking-[0.08em] mt-1">領域別の嫌い集中度</h3>
+            </div>
+            <div class="rule"></div>
+            <div id="domains" class="space-y-4"></div>
+        </section>
+
+        <section class="panel p-6 sm:p-8 space-y-5 rise-3">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <div class="text-[10px] tracking-[0.25em] uppercase text-[#8A8580] font-display">Experience</div>
+                    <h3 class="font-jp text-2xl tracking-[0.08em] mt-1">経験年数との相関</h3>
+                </div>
+                <div class="flex border border-black/10">
+                    <button type="button" id="exp-dislike" onclick="setExpMode('dislike')" class="px-3 py-1.5 text-xs font-semibold tracking-[0.12em] bg-[#B87A7A] text-white">嫌い</button>
+                    <button type="button" id="exp-like" onclick="setExpMode('like')" class="px-3 py-1.5 text-xs font-semibold tracking-[0.12em] text-[#8A8580]">好き</button>
+                </div>
+            </div>
+            <div class="rule"></div>
+            <div id="exp-headcount" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+            <div id="exp-groups" class="grid md:grid-cols-2 gap-4"></div>
+            <div>
+                <h4 class="font-jp text-lg tracking-[0.06em] mb-3">年数帯で差が大きい業務</h4>
+                <div class="overflow-x-auto border border-black/10">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-[#F0EEEE] text-[#5C5754]">
+                            <tr>
+                                <th class="p-2.5">業務名</th>
+                                <th class="p-2.5">高い側</th>
+                                <th class="p-2.5">低い側</th>
+                                <th class="p-2.5 text-center">差</th>
+                                <th class="p-2.5">領域</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exp-gaps" class="divide-y divide-black/5 bg-white/50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel p-6 sm:p-8 space-y-4 rise-3">
+            <div>
+                <div class="text-[10px] tracking-[0.25em] uppercase text-[#8A8580] font-display">Extract</div>
+                <h3 class="font-jp text-2xl tracking-[0.08em] mt-1">嫌い業務の全抽出</h3>
+                <p class="text-xs text-[#8A8580] mt-1">嫌い＋大嫌いが1票以上の業務（票数順）</p>
+            </div>
+            <div class="rule"></div>
+            <div class="overflow-x-auto border border-black/10">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-[#F0EEEE] text-[#5C5754]">
+                        <tr>
+                            <th class="p-2.5 w-10">順</th>
+                            <th class="p-2.5">業務名</th>
+                            <th class="p-2.5 text-center">嫌い</th>
+                            <th class="p-2.5 text-center">大嫌い</th>
+                            <th class="p-2.5 text-center">合計</th>
+                            <th class="p-2.5 text-center">嫌い率</th>
+                            <th class="p-2.5">領域</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dislike-table" class="divide-y divide-black/5 bg-white/50"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-black/10 py-8 text-center">
+        <div class="text-[10px] tracking-[0.28em] uppercase text-[#8A8580] font-display mb-1">Office Editorial</div>
+        <div class="font-jp text-sm tracking-[0.12em]">さがせ！時間泥棒 · 分析レポート</div>
+    </footer>
+
+    <script>
+        const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzBgV_kMhsxhhTAwbRzzwHb1sDUQwF9xC-2J4IOXOcy_vjDws1ePBTRaXviVPZv8TyyQg/exec";
+
+        const TASKS = [
+            { id: 1, name: "年末調整" }, { id: 2, name: "通勤手当手続" }, { id: 3, name: "住居・扶養等諸手当手続" },
+            { id: 4, name: "旅費・出張精算" }, { id: 5, name: "教職員の出勤簿・勤怠管理" }, { id: 6, name: "時間外勤務（残業）管理" },
+            { id: 7, name: "非常勤教職員の任用・給与事務" }, { id: 8, name: "産休・育休・復職事務" }, { id: 9, name: "教員免許更新・管理事務" },
+            { id: 10, name: "人事評価票取りまとめ" }, { id: 11, name: "定期健康診断関係事務" }, { id: 12, name: "教職員の異動・退職手続" },
+            { id: 13, name: "学校予算配分・執行計画" }, { id: 14, name: "日常の物品発注・納品検収" }, { id: 15, name: "公費支出負担行為・支払手続" },
+            { id: 16, name: "光熱水費等の公費支払管理" }, { id: 17, name: "予算執行状況の分析・報告" }, { id: 18, name: "各種公費補助金・交付金申請" },
+            { id: 19, name: "補助金・交付金の実績報告・精算" }, { id: 20, name: "公費決算事務" }, { id: 21, name: "私費徴収金・積立金の額決定事務" },
+            { id: 22, name: "口座振替データの作成・伝送" }, { id: 23, name: "口座振替結果の確認・入金処理" }, { id: 24, name: "私費未納者への催促・対応" },
+            { id: 25, name: "就学援助費の申請・受給資格確認" }, { id: 26, name: "就学援助費の支給・口座振込事務" }, { id: 27, name: "特別支援教育就学奨励費の手続" },
+            { id: 28, name: "学校給食費の徴収・公会計化連携" }, { id: 29, name: "私費会計の決算・監査対応" }, { id: 30, name: "返金事務（修学旅行等）" },
+            { id: 31, name: "備品台帳登録・管理" }, { id: 32, name: "不用備品の廃棄手続" }, { id: 33, name: "施設・設備の定期点検窓口" },
+            { id: 34, name: "施設・設備の破損修繕事務" }, { id: 35, name: "環境衛生・委託業務の履行確認" }, { id: 36, name: "公印管理・押印対応" },
+            { id: 37, name: "収受公文書の受付・配布" }, { id: 38, name: "発送文書の管理" }, { id: 39, name: "公文書の保存・ファイリング" },
+            { id: 40, name: "保存期間満了文書の破棄手続" }, { id: 41, name: "新入生の学籍作成事務" }, { id: 42, name: "転出入（転校）事務" },
+            { id: 43, name: "各種証明書の発行（在校生・卒業生）" }, { id: 44, name: "スポーツ振興センター（災害給付）申請" }, { id: 45, name: "奨学金・就学支援金の手続" },
+            { id: 46, name: "学校施設の対外貸出（社会開放）手続" }, { id: 47, name: "教育委員会・外部からの照会回答" }, { id: 48, name: "教職員用ICT端末・ID管理" },
+            { id: 49, name: "学校評価・保護者アンケート集計" }, { id: 50, name: "窓口・電話の一次対応" }
+        ];
+
+        const TASK_DOMAINS = [
+            { id: 'labor', name: '人事・給与・勤怠', ids: [1,2,3,4,5,6,7,8,9,10,11,12] },
+            { id: 'finance', name: '予算・決算・会計', ids: [13,14,15,16,17,18,19,20,29] },
+            { id: 'aid', name: '私費・就学援助', ids: [21,22,23,24,25,26,27,28,30,45] },
+            { id: 'facility', name: '施設・備品', ids: [31,32,33,34,35] },
+            { id: 'docs', name: '文書・学籍', ids: [36,37,38,39,40,41,42,43] },
+            { id: 'front', name: '窓口・対外・ICT', ids: [44,46,47,48,49,50] }
+        ];
+
+        const EXPERIENCE_OPTIONS = [
+            { value: '1-5', label: '1〜5年' },
+            { value: '6-10', label: '6〜10年' },
+            { value: '11-20', label: '11〜20年' },
+            { value: '21+', label: '21年以上' }
+        ];
+
+        let cached = null;
+        let expMode = 'dislike';
+
+        function taskName(id) {
+            const t = TASKS.find(x => Number(x.id) === Number(id));
+            return t ? t.name : `業務${id}`;
+        }
+        function domainName(id) {
+            const d = TASK_DOMAINS.find(x => x.ids.some(n => Number(n) === Number(id)));
+            return d ? d.name : 'その他';
+        }
+
+        function computeStats(responses) {
+            const users = Object.keys(responses || {});
+            return TASKS.map(task => {
+                let love = 0, like = 0, neutral = 0, dislike = 0, hate = 0;
+                users.forEach(u => {
+                    const a = responses[u]?.[task.id] ?? responses[u]?.[String(task.id)];
+                    if (a === 'love') love++;
+                    else if (a === 'like') like++;
+                    else if (a === 'neutral') neutral++;
+                    else if (a === 'dislike') dislike++;
+                    else if (a === 'hate') hate++;
+                });
+                const active = love + like + neutral + dislike + hate;
+                const totalLike = love + like;
+                const totalDislike = dislike + hate;
+                return {
+                    id: task.id,
+                    name: task.name,
+                    love, like, neutral, dislike, hate, active,
+                    totalLike, totalDislike,
+                    likeRate: active ? (totalLike / active) * 100 : 0,
+                    dislikeRate: active ? (totalDislike / active) * 100 : 0
+                };
+            });
+        }
+
+        function computeStatsForUsers(users, responses) {
+            return TASKS.map(task => {
+                let love = 0, like = 0, neutral = 0, dislike = 0, hate = 0;
+                users.forEach(u => {
+                    const a = responses[u]?.[task.id] ?? responses[u]?.[String(task.id)];
+                    if (a === 'love') love++;
+                    else if (a === 'like') like++;
+                    else if (a === 'neutral') neutral++;
+                    else if (a === 'dislike') dislike++;
+                    else if (a === 'hate') hate++;
+                });
+                const active = love + like + neutral + dislike + hate;
+                const totalLike = love + like;
+                const totalDislike = dislike + hate;
+                return {
+                    id: task.id, name: task.name, active, totalLike, totalDislike,
+                    likeRate: active ? (totalLike / active) * 100 : 0,
+                    dislikeRate: active ? (totalDislike / active) * 100 : 0
+                };
+            });
+        }
+
+        function buildReport(data) {
+            const responses = data.responses || {};
+            const profiles = data.profiles || {};
+            const users = Object.keys(responses);
+            const stats = computeStats(responses);
+            const disliked = [...stats].filter(s => s.totalDislikeCount > 0)
+                .sort((a, b) => b.totalDislikeCount - a.totalDislikeCount || b.hate - a.hate);
+            const liked = [...stats].filter(s => s.totalLikeCount > 0)
+                .sort((a, b) => b.totalLikeCount - a.totalLikeCount || b.love - a.love);
+
+            const domains = TASK_DOMAINS.map(d => {
+                let dislike = 0, active = 0;
+                d.ids.forEach(id => {
+                    const s = stats.find(t => Number(t.id) === Number(id));
+                    if (!s) return;
+                    dislike += s.totalDislikeCount;
+                    active += s.active;
+                });
+                return { ...d, dislike, active, rate: active ? Math.round(dislike / active * 100) : 0 };
+            }).sort((a, b) => b.dislike - a.dislike);
+
+            const groups = EXPERIENCE_OPTIONS.map(opt => {
+                const gUsers = users.filter(u => (profiles[u]?.experienceYears || '') === opt.value);
+                const gStats = computeStatsForUsers(gUsers, responses);
+                return {
+                    ...opt,
+                    count: gUsers.length,
+                    topLike: [...gStats].filter(s => s.totalLikeCount > 0).sort((a,b)=>b.totalLikeCount-a.totalLikeCount).slice(0,5),
+                    topDislike: [...gStats].filter(s => s.totalDislikeCount > 0).sort((a,b)=>b.totalDislikeCount-a.totalDislikeCount).slice(0,5),
+                    stats: gStats
+                };
+            });
+
+            const unknownExp = users.filter(u => !EXPERIENCE_OPTIONS.some(o => o.value === (profiles[u]?.experienceYears || ''))).length;
+            const withExp = users.length - unknownExp;
+
+            const insights = [];
+            insights.push(`回答者は ${users.length} 名です（経験年数の記入あり ${withExp} 名）。`);
+            if (disliked[0]) insights.push(`最も嫌い票が多い業務は「${disliked[0].name}」（合計${disliked[0].totalDislikeCount}票／大嫌い${disliked[0].hate}票）。`);
+            if (liked[0]) insights.push(`最も好き票が多い業務は「${liked[0].name}」（合計${liked[0].totalLikeCount}票）。`);
+            if (domains[0]?.dislike > 0) insights.push(`領域としては「${domains[0].name}」に嫌い票が集中しています（${domains[0].dislike}票）。`);
+            const highRate = [...stats].filter(s => s.active >= Math.max(1, Math.ceil(users.length * 0.4)) && s.totalDislikeCount > 0)
+                .sort((a,b)=>b.dislikeRate-a.dislikeRate)[0];
+            if (highRate && highRate.dislikeRate >= 50) {
+                insights.push(`担当内嫌い率が高い業務は「${highRate.name}」（嫌い率${Math.round(highRate.dislikeRate)}%）。改善・研究の重点候補です。`);
+            }
+
+            return { users, stats, disliked, liked, domains, groups, insights, unknownExp, exportedAt: data.exportedAt };
+        }
+
+        function setExpMode(mode) {
+            expMode = mode === 'like' ? 'like' : 'dislike';
+            const d = document.getElementById('exp-dislike');
+            const l = document.getElementById('exp-like');
+            if (expMode === 'dislike') {
+                d.className = 'px-3 py-1.5 text-xs font-semibold tracking-[0.12em] bg-[#B87A7A] text-white';
+                l.className = 'px-3 py-1.5 text-xs font-semibold tracking-[0.12em] text-[#8A8580]';
+            } else {
+                l.className = 'px-3 py-1.5 text-xs font-semibold tracking-[0.12em] bg-[#6E7A72] text-white';
+                d.className = 'px-3 py-1.5 text-xs font-semibold tracking-[0.12em] text-[#8A8580]';
+            }
+            if (cached) renderExperience(cached);
+        }
+
+        function renderRankList(el, items, kind) {
+            const isLike = kind === 'like';
+            const color = isLike ? '#6E7A72' : '#B87A7A';
+            const max = Math.max(1, ...items.map(s => isLike ? s.totalLikeCount : s.totalDislikeCount));
+            el.innerHTML = items.length ? items.map((s, i) => {
+                const n = isLike ? s.totalLikeCount : s.totalDislikeCount;
+                const pct = Math.round((n / max) * 100);
+                return `<div>
+                    <div class="flex justify-between gap-2 text-sm mb-1">
+                        <div class="min-w-0"><span class="font-jp text-[#8A8580] mr-2">${i+1}</span><span class="font-semibold">${s.name}</span></div>
+                        <div class="shrink-0 font-semibold" style="color:${color}">${n}票</div>
+                    </div>
+                    <div class="bar"><span style="width:${pct}%;background:${color}"></span></div>
+                </div>`;
+            }).join('') : `<p class="text-sm text-[#8A8580]">まだデータがありません</p>`;
+        }
+
+        function renderExperience(report) {
+            const accent = expMode === 'like' ? '#6E7A72' : '#B87A7A';
+            document.getElementById('exp-headcount').innerHTML = report.groups.map(g => `
+                <div class="border border-black/10 bg-white/70 px-3 py-3 text-center">
+                    <div class="text-[10px] tracking-[0.12em] text-[#8A8580]">${g.label}</div>
+                    <div class="font-jp text-2xl mt-1">${g.count}<span class="text-xs text-[#8A8580]">名</span></div>
+                </div>
+            `).join('');
+
+            document.getElementById('exp-groups').innerHTML = report.groups.map(g => {
+                const list = expMode === 'like' ? g.topLike : g.topDislike;
+                if (!g.count) {
+                    return `<div class="border border-black/10 p-4 bg-white/50"><div class="font-jp text-base mb-1">${g.label}</div><p class="text-xs text-[#8A8580]">回答者なし</p></div>`;
+                }
+                const rows = list.length ? list.map((s,i) => {
+                    const n = expMode === 'like' ? s.totalLikeCount : s.totalDislikeCount;
+                    const r = Math.round(expMode === 'like' ? s.likeRate : s.dislikeRate);
+                    return `<div class="flex justify-between text-xs py-1.5 border-b border-black/5 last:border-0">
+                        <span><span class="font-jp mr-2" style="color:${accent}">${i+1}</span>${s.name}</span>
+                        <span class="text-[#5C5754]">${n}票（${r}%）</span>
+                    </div>`;
+                }).join('') : `<p class="text-xs text-[#8A8580]">票なし</p>`;
+                return `<div class="border border-black/10 p-4 bg-white/60"><div class="flex justify-between mb-2"><div class="font-jp text-base">${g.label}</div><div class="text-[11px] text-[#8A8580]">${g.count}名</div></div>${rows}</div>`;
+            }).join('');
+
+            const active = report.groups.filter(g => g.count > 0);
+            const gaps = [];
+            TASKS.forEach(task => {
+                const rows = active.map(g => {
+                    const s = g.stats.find(t => Number(t.id) === Number(task.id));
+                    const rate = expMode === 'like' ? (s?.likeRate || 0) : (s?.dislikeRate || 0);
+                    const votes = expMode === 'like' ? (s?.totalLikeCount || 0) : (s?.totalDislikeCount || 0);
+                    return { label: g.label, rate, votes };
+                });
+                if (rows.length < 2) return;
+                rows.sort((a,b)=>b.rate-a.rate);
+                const high = rows[0], low = rows[rows.length-1];
+                const gap = high.rate - low.rate;
+                if (gap < 20 || (high.votes === 0 && low.votes === 0)) return;
+                gaps.push({ name: task.name, high, low, gap, domain: domainName(task.id) });
+            });
+            gaps.sort((a,b)=>b.gap-a.gap);
+
+            document.getElementById('exp-gaps').innerHTML = gaps.length ? gaps.slice(0,12).map(g => `
+                <tr>
+                    <td class="p-2.5 font-semibold">${g.name}</td>
+                    <td class="p-2.5">${g.high.label}<br><span class="font-bold" style="color:${accent}">${Math.round(g.high.rate)}%</span></td>
+                    <td class="p-2.5">${g.low.label}<br><span class="text-[#8A8580] font-bold">${Math.round(g.low.rate)}%</span></td>
+                    <td class="p-2.5 text-center font-bold" style="color:${accent}">${Math.round(g.gap)}pt</td>
+                    <td class="p-2.5 text-[#8A8580]">${g.domain}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="5" class="p-6 text-center text-[#8A8580]">比較できる差はまだありません</td></tr>`;
+        }
+
+        function render(report) {
+            const n = report.users.length;
+            const topD = report.disliked[0];
+            const topL = report.liked[0];
+            const topDom = report.domains.find(d => d.dislike > 0);
+
+            document.getElementById('status-line').textContent =
+                `データ元: Googleスプレッドシート（${n}名）` +
+                (report.exportedAt ? ` · 更新 ${new Date(report.exportedAt).toLocaleString('ja-JP')}` : '');
+
+            document.getElementById('summary-cards').innerHTML = [
+                { label: '回答者', value: `${n}名` },
+                { label: '時間泥棒1位', value: topD ? topD.name : '—' },
+                { label: '好き1位', value: topL ? topL.name : '—' },
+                { label: '嫌い集中領域', value: topDom ? topDom.name : '—' }
+            ].map(c => `
+                <div class="panel px-3 py-4 text-center">
+                    <div class="text-[10px] tracking-[0.16em] uppercase text-[#8A8580]">${c.label}</div>
+                    <div class="font-jp text-base sm:text-lg mt-2 leading-snug break-words">${c.value}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('insights').innerHTML = report.insights.map(t =>
+                `<li class="flex gap-2"><span class="text-[#C9A3A3]">・</span><span>${t.replace(/「([^」]+)」/g, '<strong class="text-[#121212]">「$1」</strong>')}</span></li>`
+            ).join('');
+
+            renderRankList(document.getElementById('top-dislike'), report.disliked.slice(0,10), 'dislike');
+            renderRankList(document.getElementById('top-like'), report.liked.slice(0,10), 'like');
+
+            const maxDom = Math.max(1, ...report.domains.map(d => d.dislike));
+            document.getElementById('domains').innerHTML = report.domains.filter(d => d.dislike > 0).map(d => `
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-semibold">${d.name}</span>
+                        <span class="text-[#B87A7A] font-semibold">${d.dislike}票 <span class="text-[#8A8580] font-normal">（嫌い率${d.rate}%）</span></span>
+                    </div>
+                    <div class="bar"><span style="width:${Math.round(d.dislike/maxDom*100)}%;background:#B87A7A"></span></div>
+                </div>
+            `).join('') || `<p class="text-sm text-[#8A8580]">まだ集計できる嫌い票がありません</p>`;
+
+            document.getElementById('dislike-table').innerHTML = report.disliked.length ? report.disliked.map((s,i) => `
+                <tr>
+                    <td class="p-2.5 font-jp text-[#B87A7A]">${i+1}</td>
+                    <td class="p-2.5 font-semibold">${s.name}</td>
+                    <td class="p-2.5 text-center">${s.dislike}</td>
+                    <td class="p-2.5 text-center text-[#B87A7A]">${s.hate}</td>
+                    <td class="p-2.5 text-center font-bold text-[#B87A7A]">${s.totalDislikeCount}</td>
+                    <td class="p-2.5 text-center">${Math.round(s.dislikeRate)}%</td>
+                    <td class="p-2.5 text-[#8A8580]">${domainName(s.id)}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="7" class="p-6 text-center text-[#8A8580]">嫌い票のある業務はまだありません</td></tr>`;
+
+            renderExperience(report);
+        }
+
+        async function loadAndRender() {
+            const status = document.getElementById('status-line');
+            status.textContent = 'スプレッドシートから読み込み中…';
+            try {
+                const url = WEBAPP_URL + (WEBAPP_URL.includes('?') ? '&' : '?') + 'action=export&_=' + Date.now();
+                const res = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || data.ok === false) throw new Error(data?.error || '不正な応答');
+                cached = buildReport(data);
+                render(cached);
+            } catch (e) {
+                console.error(e);
+                status.textContent = '読み込みに失敗しました: ' + (e.message || e);
+            }
+        }
+
+        loadAndRender();
+    </script>
+</body>
+</html>
