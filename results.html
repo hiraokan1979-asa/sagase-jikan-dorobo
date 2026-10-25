@@ -244,15 +244,15 @@
                     else if (a === 'hate') hate++;
                 });
                 const active = love + like + neutral + dislike + hate;
-                const totalLike = love + like;
-                const totalDislike = dislike + hate;
+                const totalLikeCount = love + like;
+                const totalDislikeCount = dislike + hate;
                 return {
                     id: task.id,
                     name: task.name,
                     love, like, neutral, dislike, hate, active,
-                    totalLike, totalDislike,
-                    likeRate: active ? (totalLike / active) * 100 : 0,
-                    dislikeRate: active ? (totalDislike / active) * 100 : 0
+                    totalLikeCount, totalDislikeCount,
+                    likeRate: active ? (totalLikeCount / active) * 100 : 0,
+                    dislikeRate: active ? (totalDislikeCount / active) * 100 : 0
                 };
             });
         }
@@ -269,12 +269,12 @@
                     else if (a === 'hate') hate++;
                 });
                 const active = love + like + neutral + dislike + hate;
-                const totalLike = love + like;
-                const totalDislike = dislike + hate;
+                const totalLikeCount = love + like;
+                const totalDislikeCount = dislike + hate;
                 return {
-                    id: task.id, name: task.name, active, totalLike, totalDislike,
-                    likeRate: active ? (totalLike / active) * 100 : 0,
-                    dislikeRate: active ? (totalDislike / active) * 100 : 0
+                    id: task.id, name: task.name, active, totalLikeCount, totalDislikeCount,
+                    likeRate: active ? (totalLikeCount / active) * 100 : 0,
+                    dislikeRate: active ? (totalDislikeCount / active) * 100 : 0
                 };
             });
         }
