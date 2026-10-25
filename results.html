@@ -55,14 +55,18 @@
                 background: #fff !important;
                 color: #111 !important;
                 background-image: none !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
             }
-            body * { visibility: hidden; }
-            #print-report, #print-report * { visibility: visible; }
+            /* visibility:hidden だと本編の高さ分の空白ページが出るため display:none で除外 */
+            body > *:not(#print-report) { display: none !important; }
             #print-report {
                 display: block !important;
-                position: absolute;
-                left: 0; top: 0; width: 100%;
+                position: static !important;
+                width: 100%;
                 padding: 0;
+                margin: 0;
                 color: #111;
                 background: #fff;
                 font-family: "Hiragino Sans", "Yu Gothic", "Figtree", sans-serif;
