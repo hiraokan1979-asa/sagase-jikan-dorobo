@@ -47,16 +47,41 @@
         .rise { animation: rise 0.55s ease-out both; }
         .rise-2 { animation: rise 0.55s 0.08s ease-out both; }
         .rise-3 { animation: rise 0.55s 0.16s ease-out both; }
+
+        #print-report { display: none; }
+        @media print {
+            @page { size: A4 portrait; margin: 12mm; }
+            html, body {
+                background: #fff !important;
+                color: #111 !important;
+                background-image: none !important;
+            }
+            body * { visibility: hidden; }
+            #print-report, #print-report * { visibility: visible; }
+            #print-report {
+                display: block !important;
+                position: absolute;
+                left: 0; top: 0; width: 100%;
+                padding: 0;
+                color: #111;
+                background: #fff;
+                font-family: "Hiragino Sans", "Yu Gothic", "Figtree", sans-serif;
+            }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-[#C9A3A3]">
-    <header class="border-b border-black/10 bg-[#F7F6F4]/90 backdrop-blur sticky top-0 z-40">
+    <header class="border-b border-black/10 bg-[#F7F6F4]/90 backdrop-blur sticky top-0 z-40 no-print">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 h-[4.5rem] flex items-center justify-between">
             <div>
                 <div class="text-[9px] tracking-[0.28em] uppercase text-[#8A8580] font-display">Analysis Report</div>
                 <h1 class="font-jp text-xl sm:text-2xl tracking-[0.1em]">さがせ！時間泥棒</h1>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
+                <button id="btn-pdf" onclick="exportResultsPdf()" class="px-3 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] bg-[#B87A7A] text-white hover:bg-[#A66C6C] transition">
+                    PDF出力
+                </button>
                 <button id="btn-reload" onclick="loadAndRender()" class="px-3 py-2 text-[10px] sm:text-xs font-semibold tracking-[0.14em] border border-black/15 hover:bg-white transition">
                     再読込
                 </button>
@@ -66,6 +91,8 @@
             </div>
         </div>
     </header>
+
+    <div id="print-report" aria-hidden="true"></div>
 
     <main class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-12">
         <section class="rise text-center space-y-4">
@@ -175,7 +202,7 @@
         </section>
     </main>
 
-    <footer class="border-t border-black/10 py-8 text-center">
+    <footer class="border-t border-black/10 py-8 text-center no-print">
         <div class="text-[10px] tracking-[0.28em] uppercase text-[#8A8580] font-display mb-1">Office Editorial</div>
         <div class="font-jp text-sm tracking-[0.12em]">さがせ！時間泥棒 · 分析レポート</div>
     </footer>
@@ -467,6 +494,209 @@
             `).join('') : `<tr><td colspan="7" class="p-6 text-center text-[#8A8580]">嫌い票のある業務はまだありません</td></tr>`;
 
             renderExperience(report);
+        }
+
+        function buildExperienceGaps(report, mode) {
+            const active = report.groups.filter(g => g.count > 0);
+            const gaps = [];
+            TASKS.forEach(task => {
+                const rows = active.map(g => {
+                    const s = g.stats.find(t => Number(t.id) === Number(task.id));
+                    const rate = mode === 'like' ? (s?.likeRate || 0) : (s?.dislikeRate || 0);
+                    const votes = mode === 'like' ? (s?.totalLikeCount || 0) : (s?.totalDislikeCount || 0);
+                    return { label: g.label, rate, votes };
+                });
+                if (rows.length < 2) return;
+                rows.sort((a, b) => b.rate - a.rate);
+                const high = rows[0], low = rows[rows.length - 1];
+                const gap = high.rate - low.rate;
+                if (gap < 20 || (high.votes === 0 && low.votes === 0)) return;
+                gaps.push({ name: task.name, high, low, gap, domain: domainName(task.id) });
+            });
+            gaps.sort((a, b) => b.gap - a.gap);
+            return gaps;
+        }
+
+        function exportResultsPdf() {
+            if (!cached || !cached.users.length) {
+                alert('出力する回答データがありません。先に「再読込」でデータを取得してください。');
+                return;
+            }
+
+            const report = cached;
+            const now = new Date();
+            const dateLabel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+            const topDislike = report.disliked.slice(0, 12);
+            const topLike = report.liked.slice(0, 8);
+            const topDomains = report.domains.filter(d => d.dislike > 0).slice(0, 6);
+            const expGaps = buildExperienceGaps(report, 'dislike').slice(0, 8);
+            const expBands = report.groups.map(g => {
+                const list = g.topDislike.slice(0, 3);
+                const items = list.length
+                    ? list.map((s, i) => `${i + 1}. ${s.name}（${s.totalDislikeCount}票）`).join('　')
+                    : '票なし';
+                return `<tr>
+                    <td style="border:1px solid #ccc; padding:4px; font-weight:700; width:18%;">${g.label}<br><span style="font-weight:400;color:#666;">${g.count}名</span></td>
+                    <td style="border:1px solid #ccc; padding:4px;">${g.count ? items : '回答者なし'}</td>
+                </tr>`;
+            }).join('');
+
+            const th = 'border:1px solid #ccc; padding:4px;';
+            const td = 'border:1px solid #ccc; padding:3px 4px;';
+
+            document.getElementById('print-report').innerHTML = `
+                <div style="font-size:11px; line-height:1.45; color:#111;">
+                    <div style="border-bottom:2px solid #B87A7A; padding-bottom:8px; margin-bottom:12px;">
+                        <div style="font-size:9px; letter-spacing:0.2em; color:#8A8580; text-transform:uppercase;">Analysis Report</div>
+                        <div style="font-size:18px; font-weight:800; margin-top:2px;">さがせ！時間泥棒　回答データ分析レポート</div>
+                        <div style="margin-top:4px; color:#444;">作成日: ${dateLabel}　／　回答者: ${report.users.length}名　／　嫌い票あり業務: ${report.disliked.length}件</div>
+                        <div style="margin-top:2px; color:#666;">データ元: Googleスプレッドシート（クラウド集計）</div>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#B87A7A;">■ 研究メモ（要点）</div>
+                        <ol style="margin:0; padding-left:18px;">
+                            ${report.insights.map(t => `<li style="margin-bottom:2px;">${t}</li>`).join('')}
+                        </ol>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <div>
+                            <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#B87A7A;">■ 嫌いが多い業務 TOP${topDislike.length}</div>
+                            <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                                <thead><tr style="background:#F8EEEE;">
+                                    <th style="${th} width:28px;">順</th>
+                                    <th style="${th} text-align:left;">業務名</th>
+                                    <th style="${th} width:40px;">合計</th>
+                                    <th style="${th} width:44px;">嫌い率</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${topDislike.length ? topDislike.map((s, i) => `
+                                        <tr>
+                                            <td style="${td} text-align:center; font-weight:700;">${i + 1}</td>
+                                            <td style="${td}">${s.name}</td>
+                                            <td style="${td} text-align:center; font-weight:700;">${s.totalDislikeCount}</td>
+                                            <td style="${td} text-align:center;">${Math.round(s.dislikeRate)}%</td>
+                                        </tr>
+                                    `).join('') : `<tr><td colspan="4" style="${td} text-align:center;">該当なし</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#6E7A72;">■ 好きが多い業務 TOP${topLike.length}</div>
+                            <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                                <thead><tr style="background:#EEF2F0;">
+                                    <th style="${th} width:28px;">順</th>
+                                    <th style="${th} text-align:left;">業務名</th>
+                                    <th style="${th} width:40px;">合計</th>
+                                    <th style="${th} width:44px;">好き率</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${topLike.length ? topLike.map((s, i) => `
+                                        <tr>
+                                            <td style="${td} text-align:center; font-weight:700;">${i + 1}</td>
+                                            <td style="${td}">${s.name}</td>
+                                            <td style="${td} text-align:center; font-weight:700;">${s.totalLikeCount}</td>
+                                            <td style="${td} text-align:center;">${Math.round(s.likeRate)}%</td>
+                                        </tr>
+                                    `).join('') : `<tr><td colspan="4" style="${td} text-align:center;">該当なし</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#B87A7A;">■ 領域別の嫌い集中度</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                            <thead><tr style="background:#F8EEEE;">
+                                <th style="${th} text-align:left;">領域</th>
+                                <th style="${th} width:70px;">嫌い票</th>
+                                <th style="${th} width:70px;">嫌い率</th>
+                            </tr></thead>
+                            <tbody>
+                                ${topDomains.length ? topDomains.map(d => `
+                                    <tr>
+                                        <td style="${td}">${d.name}</td>
+                                        <td style="${td} text-align:center; font-weight:700;">${d.dislike}</td>
+                                        <td style="${td} text-align:center;">${d.rate}%</td>
+                                    </tr>
+                                `).join('') : `<tr><td colspan="3" style="${td} text-align:center;">該当なし</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#B87A7A;">■ 経験年数帯 × 嫌い業務（上位3）</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                            <thead><tr style="background:#F0EEEE;">
+                                <th style="${th} text-align:left;">経験年数</th>
+                                <th style="${th} text-align:left;">嫌いが多い業務</th>
+                            </tr></thead>
+                            <tbody>${expBands}</tbody>
+                        </table>
+                    </div>
+
+                    ${expGaps.length ? `
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#B87A7A;">■ 経験年数で差が大きい業務（嫌い率）</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:10px;">
+                            <thead><tr style="background:#F0EEEE;">
+                                <th style="${th} text-align:left;">業務名</th>
+                                <th style="${th}">高い側</th>
+                                <th style="${th}">低い側</th>
+                                <th style="${th} width:48px;">差</th>
+                                <th style="${th} text-align:left;">領域</th>
+                            </tr></thead>
+                            <tbody>
+                                ${expGaps.map(g => `
+                                    <tr>
+                                        <td style="${td}">${g.name}</td>
+                                        <td style="${td}">${g.high.label} ${Math.round(g.high.rate)}%</td>
+                                        <td style="${td}">${g.low.label} ${Math.round(g.low.rate)}%</td>
+                                        <td style="${td} text-align:center; font-weight:700;">${Math.round(g.gap)}pt</td>
+                                        <td style="${td}">${g.domain}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>` : ''}
+
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:12px; font-weight:800; margin-bottom:4px; color:#B87A7A;">■ 嫌い業務の抽出一覧（票数順・上位${Math.min(20, report.disliked.length)}件）</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:9.5px;">
+                            <thead><tr style="background:#F8EEEE;">
+                                <th style="${th} width:24px;">順</th>
+                                <th style="${th} text-align:left;">業務名</th>
+                                <th style="${th} width:36px;">嫌い</th>
+                                <th style="${th} width:44px;">大嫌い</th>
+                                <th style="${th} width:36px;">合計</th>
+                                <th style="${th} width:44px;">嫌い率</th>
+                                <th style="${th} text-align:left;">領域</th>
+                            </tr></thead>
+                            <tbody>
+                                ${report.disliked.slice(0, 20).map((s, i) => `
+                                    <tr>
+                                        <td style="${td} text-align:center; font-weight:700;">${i + 1}</td>
+                                        <td style="${td}">${s.name}</td>
+                                        <td style="${td} text-align:center;">${s.dislike}</td>
+                                        <td style="${td} text-align:center;">${s.hate}</td>
+                                        <td style="${td} text-align:center; font-weight:700;">${s.totalDislikeCount}</td>
+                                        <td style="${td} text-align:center;">${Math.round(s.dislikeRate)}%</td>
+                                        <td style="${td}">${domainName(s.id)}</td>
+                                    </tr>
+                                `).join('') || `<tr><td colspan="7" style="${td} text-align:center;">該当なし</td></tr>`}
+                            </tbody>
+                        </table>
+                        ${report.disliked.length > 20 ? `<div style="margin-top:3px; color:#666;">※紙面の都合で上位20件のみ掲載（画面では全${report.disliked.length}件を確認可能）</div>` : ''}
+                    </div>
+
+                    <div style="border-top:1px solid #ddd; padding-top:6px; color:#555; font-size:9px;">
+                        本レポートは「さがせ！時間泥棒」の回答データ分析結果です。業務標準化・DX・勤務改善研究の基礎資料としてご活用ください。印刷ダイアログで「PDFに保存」を選択してください。
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => window.print(), 80);
         }
 
         async function loadAndRender() {
